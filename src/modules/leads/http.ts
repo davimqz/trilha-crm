@@ -6,6 +6,7 @@ import { DomainError, NotFoundError } from "@/core/errors";
 import { ForbiddenError } from "@/core/rbac/authorization";
 
 import { ATTACHMENT_MAX_BYTES } from "./constants";
+import { previewTypeOf } from "./file-types";
 import { getLeadsService } from "./service";
 
 // Handlers HTTP de anexos (route handlers não têm a checagem de origem automática das Server Actions)
@@ -67,9 +68,9 @@ export async function handleAttachmentUpload(request: Request, leadId: string): 
 }
 
 // RFC 6266: nome ASCII de fallback + nome UTF-8 codificado
-function contentDisposition(fileName: string): string {
+function contentDisposition(type: "attachment" | "inline", fileName: string): string {
   const fallback = fileName.normalize("NFKD").replace(/[^\x20-\x7e]/g, "").replace(/["\\]/g, "") || "arquivo";
-  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
+  return `${type}; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
 }
 
 export async function handleAttachmentDownload(leadId: string, attachmentId: string): Promise<Response> {
@@ -83,9 +84,43 @@ export async function handleAttachmentDownload(leadId: string, attachmentId: str
         "Content-Type": file.mimeType,
         "Content-Length": String(file.data.byteLength),
         // Sempre download: o navegador nunca renderiza o arquivo no contexto do CRM
-        "Content-Disposition": contentDisposition(file.fileName),
+        "Content-Disposition": contentDisposition("attachment", file.fileName),
         "X-Content-Type-Options": "nosniff",
         "Content-Security-Policy": "default-src 'none'; sandbox",
+        "Cache-Control": "private, no-store",
+      },
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+// Pré-visualização (inline) só para PDF, imagem e texto. Pode ser exibida apenas dentro do próprio CRM
+// (frame-ancestors 'self'). Imagem e texto ficam em sandbox; o PDF não, porque o visualizador de PDF do Chrome
+// não abre com CSP sandbox. O conteúdo já foi validado pela assinatura no upload e o MIME vem da allowlist.
+export async function handleAttachmentPreview(leadId: string, attachmentId: string): Promise<Response> {
+  const actor = await getCurrentActor();
+  if (!actor) return json(401, "Sessão expirada. Entre novamente.");
+
+  try {
+    const file = await getLeadsService().getAttachmentFile(actor, { leadId, attachmentId });
+    const previewType = previewTypeOf(file.kind);
+    if (!previewType) return json(415, "Este tipo de arquivo não pode ser visualizado. Use Baixar.");
+
+    const csp =
+      previewType === "pdf"
+        ? "default-src 'none'; frame-ancestors 'self'"
+        : "default-src 'none'; frame-ancestors 'self'; sandbox";
+
+    return new Response(new Uint8Array(file.data), {
+      headers: {
+        // Texto sempre como text/plain: um .csv/.txt com HTML nunca é renderizado como página
+        "Content-Type": previewType === "text" ? "text/plain; charset=utf-8" : file.mimeType,
+        "Content-Length": String(file.data.byteLength),
+        "Content-Disposition": contentDisposition("inline", file.fileName),
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Content-Security-Policy": csp,
         "Cache-Control": "private, no-store",
       },
     });

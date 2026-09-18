@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { detectAttachmentKind, formatFileSize, sanitizeFileName } from "../file-types";
+import { detectAttachmentKind, formatFileSize, previewTypeOf, sanitizeFileName } from "../file-types";
 
 const bytes = (...values: number[]) => new Uint8Array(values);
 const ascii = (text: string) => new TextEncoder().encode(text);
@@ -75,5 +75,19 @@ describe("formatFileSize", () => {
     expect(formatFileSize(512)).toBe("512 B");
     expect(formatFileSize(1536)).toBe("1,5 KB");
     expect(formatFileSize(10 * 1024 * 1024)).toBe("10,0 MB");
+  });
+});
+
+describe("previewTypeOf", () => {
+  it("permite visualizar só PDF, imagens e texto", () => {
+    expect(previewTypeOf("pdf")).toBe("pdf");
+    expect(previewTypeOf("png")).toBe("image");
+    expect(previewTypeOf("jpg")).toBe("image");
+    expect(previewTypeOf("txt")).toBe("text");
+    expect(previewTypeOf("csv")).toBe("text");
+  });
+
+  it.each(["doc", "docx", "xls", "xlsx"] as const)("%s não tem visualização (só download)", (kind) => {
+    expect(previewTypeOf(kind)).toBeNull();
   });
 });

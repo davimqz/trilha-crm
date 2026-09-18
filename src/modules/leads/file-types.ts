@@ -23,6 +23,20 @@ export const ATTACHMENT_KINDS = {
 
 export type AttachmentKind = keyof typeof ATTACHMENT_KINDS;
 
+// Tipos que o navegador exibe nativamente. DOC/DOCX/XLS/XLSX não: exigiriam enviar o arquivo a um serviço
+// externo (Office/Google), o que exporia dados dos leads. Texto é sempre exibido como text/plain (nunca HTML).
+export const PREVIEWABLE_KINDS: Partial<Record<AttachmentKind, "pdf" | "image" | "text">> = {
+  pdf: "pdf",
+  png: "image",
+  jpg: "image",
+  txt: "text",
+  csv: "text",
+};
+
+export function previewTypeOf(kind: AttachmentKind) {
+  return PREVIEWABLE_KINDS[kind] ?? null;
+}
+
 export const ACCEPTED_EXTENSIONS = Object.values(ATTACHMENT_KINDS).flatMap((kind) =>
   kind.extensions.map((extension) => `.${extension}`),
 );
