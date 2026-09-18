@@ -15,7 +15,8 @@
     "db:studio": "drizzle-kit studio",
     "test": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
-    "test:all": "vitest run"
+    "test:all": "vitest run",
+    "auth:create-admin": "tsx --conditions=react-server scripts/create-admin.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
