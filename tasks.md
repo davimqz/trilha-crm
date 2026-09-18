@@ -200,7 +200,7 @@ bloqueio de inativos em hook de criação de sessão; criação/alteração de u
 ### Definition of Done
 
 - [x] Critérios de aceitação 1–9 verificados
-- [ ] lint, typecheck, unit, integração, E2E e build verdes no CI
+- [x] lint, typecheck, unit, integração, E2E e build verdes no CI
 - [x] Docs (architecture, repository-map, security, skill) atualizadas
 
 ---
