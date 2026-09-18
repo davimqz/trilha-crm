@@ -260,7 +260,7 @@ edição/exclusão de anotações.
 ### Definition of Done
 
 - [x] Critérios de aceitação 1–13 verificados
-- [ ] CI verde (lint, typecheck, unit, integração, build, E2E)
+- [x] CI verde (lint, typecheck, unit, integração, build, E2E)
 - [x] Docs atualizadas (spec, architecture, repository-map, security)
 
 # Entrega 04 — Clientes 🟡
