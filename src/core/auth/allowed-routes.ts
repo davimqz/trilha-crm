@@ -7,10 +7,20 @@ const ALLOWED_AUTH_ROUTES: Readonly<Record<string, readonly string[]>> = {
   POST: ["/sign-in/email", "/sign-out", "/change-password"],
 };
 
-export function isAllowedAuthRequest(request: Request): boolean {
+export type AuthRequestCheck = { allowed: true } | { allowed: false; status: 404 | 415 };
+
+export function checkAuthRequest(request: Request): AuthRequestCheck {
   const { pathname } = new URL(request.url);
-  if (!pathname.startsWith(`${AUTH_BASE_PATH}/`)) return false;
+  if (!pathname.startsWith(`${AUTH_BASE_PATH}/`)) return { allowed: false, status: 404 };
 
   const path = pathname.slice(AUTH_BASE_PATH.length);
-  return ALLOWED_AUTH_ROUTES[request.method]?.includes(path) ?? false;
+  if (!ALLOWED_AUTH_ROUTES[request.method]?.includes(path)) return { allowed: false, status: 404 };
+
+  // O Better Auth aceita form-urlencoded; exigir JSON impede envio por formulário HTML de outro site
+  if (request.method === "POST") {
+    const mediaType = request.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
+    if (mediaType !== "application/json") return { allowed: false, status: 415 };
+  }
+
+  return { allowed: true };
 }

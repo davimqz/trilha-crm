@@ -1,8 +1,9 @@
 import { getAuth } from "@/core/auth";
-import { isAllowedAuthRequest } from "@/core/auth/allowed-routes";
+import { checkAuthRequest } from "@/core/auth/allowed-routes";
 
 async function handle(request: Request) {
-  if (!isAllowedAuthRequest(request)) return new Response("Not Found", { status: 404 });
+  const check = checkAuthRequest(request);
+  if (!check.allowed) return new Response(null, { status: check.status });
   return getAuth().handler(request);
 }
 

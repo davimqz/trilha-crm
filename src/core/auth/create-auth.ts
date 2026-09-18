@@ -5,10 +5,8 @@ import { eq } from "drizzle-orm";
 
 import type { Database } from "@/core/db/create-database";
 
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./password-policy";
 import { authSchema, users } from "./schema";
-
-export const PASSWORD_MIN_LENGTH = 12;
-export const PASSWORD_MAX_LENGTH = 128;
 
 // Segunda camada além da allowlist do route handler (ver ADR-005)
 const DISABLED_PATHS = [
@@ -79,6 +77,10 @@ export function createAuth({ db, secret, baseURL, rateLimitEnabled = true }: Cre
       },
     },
     advanced: {
+      // Explícito: o Better Auth desliga a checagem de Origin/CSRF quando detecta ambiente de teste,
+      // o que faria os testes não refletirem produção
+      disableOriginCheck: false,
+      disableCSRFCheck: false,
       cookiePrefix: "trilha",
       database: { generateId: "uuid" },
     },
