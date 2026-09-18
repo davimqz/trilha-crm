@@ -1,20 +1,22 @@
 "use client";
 
-import { PaperclipIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { DownloadIcon, EyeIcon, PaperclipIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition, type ChangeEvent } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatShortDateTime } from "@/lib/format";
 
 import { removeAttachmentAction } from "../actions";
 import { ATTACHMENT_MAX_BYTES, ATTACHMENTS_PER_LEAD_MAX } from "../constants";
-import { ACCEPTED_EXTENSIONS, ATTACHMENT_KINDS, formatFileSize } from "../file-types";
+import { ACCEPTED_EXTENSIONS, ATTACHMENT_KINDS, formatFileSize, previewTypeOf } from "../file-types";
 import type { LeadAttachment } from "../service";
+
+import { AttachmentPreviewDialog, attachmentUrls } from "./attachment-preview-dialog";
 
 type LeadAttachmentsProps = { leadId: string; attachments: LeadAttachment[]; canEdit: boolean };
 
@@ -23,6 +25,7 @@ export function LeadAttachments({ leadId, attachments, canEdit }: LeadAttachment
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [removing, startTransition] = useTransition();
+  const [previewing, setPreviewing] = useState<LeadAttachment | null>(null);
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -98,20 +101,14 @@ export function LeadAttachments({ leadId, attachments, canEdit }: LeadAttachment
               <TableHead>Tipo</TableHead>
               <TableHead>Tamanho</TableHead>
               <TableHead>Data do anexo</TableHead>
-              {canEdit && <TableHead className="sr-only">Ações</TableHead>}
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {attachments.map((attachment) => (
               <TableRow key={attachment.id} data-testid="attachment-row">
-                <TableCell className="max-w-56 truncate font-medium">
-                  <a
-                    href={`/api/leads/${leadId}/attachments/${attachment.id}`}
-                    className="underline-offset-4 hover:underline"
-                    title={`Baixar ${attachment.fileName}`}
-                  >
-                    {attachment.fileName}
-                  </a>
+                <TableCell className="max-w-56 truncate font-medium" title={attachment.fileName}>
+                  {attachment.fileName}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">{ATTACHMENT_KINDS[attachment.kind].label}</Badge>
@@ -120,8 +117,40 @@ export function LeadAttachments({ leadId, attachments, canEdit }: LeadAttachment
                 <TableCell className="whitespace-nowrap" title={attachment.uploadedByName}>
                   {formatShortDateTime(attachment.createdAt)}
                 </TableCell>
-                {canEdit && (
-                  <TableCell className="text-right">
+                <TableCell className="text-right whitespace-nowrap">
+                  {previewTypeOf(attachment.kind) ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => setPreviewing(attachment)}
+                      aria-label={`Visualizar ${attachment.fileName}`}
+                      title="Visualizar"
+                    >
+                      <EyeIcon />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled
+                      aria-label={`Visualização indisponível para ${ATTACHMENT_KINDS[attachment.kind].label}`}
+                      title="Word/Excel não podem ser visualizados no navegador. Use Baixar."
+                    >
+                      <EyeIcon />
+                    </Button>
+                  )}
+                  <a
+                    href={attachmentUrls(leadId, attachment.id).download}
+                    download={attachment.fileName}
+                    className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+                    aria-label={`Baixar ${attachment.fileName}`}
+                    title="Baixar"
+                  >
+                    <DownloadIcon />
+                  </a>
+                  {canEdit && (
                     <ConfirmDialog
                       trigger={
                         <Button type="button" variant="ghost" size="icon-sm" disabled={removing} aria-label={`Remover ${attachment.fileName}`} title="Remover">
@@ -133,13 +162,15 @@ export function LeadAttachments({ leadId, attachments, canEdit }: LeadAttachment
                       confirmLabel="Remover"
                       onConfirm={() => remove(attachment.id)}
                     />
-                  </TableCell>
-                )}
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       )}
+
+      <AttachmentPreviewDialog leadId={leadId} attachment={previewing} onClose={() => setPreviewing(null)} />
     </div>
   );
 }
