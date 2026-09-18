@@ -189,7 +189,12 @@ describe("leads service", () => {
         service.addNote(team.sales, { leadId: id, content: noteDoc("invasão") }),
         service.addAttachment(team.sales, { leadId: id, fileName: "a.pdf", data: PDF }),
       ];
-      for (const attempt of attempts) await expect(attempt).rejects.toThrow(ForbiddenError);
+      // allSettled: todas as promises ganham handler de imediato (nada de rejeição não tratada)
+      const results = await Promise.allSettled(attempts);
+      for (const result of results) {
+        expect(result.status).toBe("rejected");
+        expect((result as PromiseRejectedResult).reason).toBeInstanceOf(ForbiddenError);
+      }
 
       const lead = await service.getLead(team.admin, { leadId: id });
       expect(lead).toMatchObject({ status: "prospect", archivedAt: null });
