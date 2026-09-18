@@ -16,7 +16,7 @@
 |---|---|---|
 | 00 | Definição (stack, arquitetura, roles, roadmap) | 🟢 |
 | 01 | Foundation | 🟢 (PR aberto) |
-| 02 | Autenticação + RBAC + gestão de usuários | ⚪ |
+| 02 | Autenticação + RBAC + gestão de usuários | 🔵 |
 | 03 | Módulo Leads | 🟡 aguardando especificação do dono do produto |
 | 04 | Módulo Clientes (+ conversão lead → cliente) | 🟡 aguardando especificação do dono do produto |
 | 05 | Hardening + Deploy do MVP | ⚪ |
@@ -111,16 +111,97 @@ Autenticação, telas de negócio, deploy.
 
 Login seguro, sessões, papéis (`admin`, `manager`, `sales`, `viewer`) e gestão de usuários pelo admin.
 
-## Tasks (rascunho)
+## Escopo
 
-- [ ] Better Auth com e-mail/senha, cadastro público desabilitado
-- [ ] Seed do primeiro admin via script
-- [ ] `core/rbac`: papéis, permissões, `can()` / `requirePermission()`
-- [ ] Proteção de rotas (layout autenticado) + checagem em todo service
-- [ ] Tela de usuários (admin): criar, alterar papel, desativar
-- [ ] Rate limiting no login
-- [ ] Testes: matriz papel × permissão, acesso sem sessão, escalada de privilégio
-- [ ] Pentest: brute force, fixação de sessão, IDOR em usuários, CSRF
+- Login por e-mail e senha; logout; troca da própria senha.
+- Sem cadastro público: usuários criados pelo admin (senha inicial definida por ele).
+- Primeiro admin criado por script (`pnpm auth:create-admin`).
+- RBAC: `can()` / `requirePermission()` sobre o índice do registry; checagem em toda page, action e service.
+- Módulo `users` (admin): listar, criar, alterar papel, desativar/reativar, redefinir senha.
+- Shell autenticado (menu por papel) e página inicial.
+
+## Fora do escopo
+
+Recuperação de senha por e-mail (sem provedor de e-mail ainda), 2FA, login social, papéis customizáveis, log de auditoria.
+
+## Decisões (ADR-005)
+
+Better Auth **sem o plugin admin**: `role` e `active` são campos do usuário com `input: false`;
+bloqueio de inativos em hook de criação de sessão; criação/alteração de usuários só pelo service `users`.
+
+## Critérios de aceitação
+
+1. Visitante sem sessão que acessa qualquer página interna é redirecionado para `/login`.
+2. Login válido leva à página inicial; inválido mostra mensagem genérica (não revela se o e-mail existe).
+3. Admin cria usuário com nome, e-mail, papel e senha inicial; o usuário consegue entrar.
+4. Menu e páginas respeitam o papel: só `admin` vê/acessa "Usuários".
+5. Admin altera papel e desativa/reativa usuários; não pode fazer isso consigo mesmo.
+6. Usuário desativado perde as sessões ativas imediatamente e não consegue entrar.
+7. Redefinição de senha pelo admin invalida a senha antiga e as sessões do usuário.
+8. Usuário troca a própria senha informando a atual.
+9. Sempre existe ao menos um admin ativo (inclusive sob alterações concorrentes).
+
+## QA
+
+| Nível | Casos |
+|---|---|
+| Unit | matriz papel × permissão, permissão desconhecida, validators (limites, e-mail, papel inválido, campos extras) |
+| Integração (Postgres) | criar usuário e logar; não-admin bloqueado em cada operação; e-mail duplicado; autoalteração bloqueada; desativar revoga sessões e bloqueia login; reset de senha; corrida entre dois admins |
+| Pentest automatizado (HTTP no handler) | cadastro público bloqueado; `/update-user` com `role` bloqueado; brute force → 429 |
+| E2E (Playwright) | redirect sem sessão; login inválido; login admin → usuários; viewer sem acesso a usuários; logout |
+
+## Ameaças analisadas
+
+| Ameaça | Mitigação |
+|---|---|
+| Brute force / credential stuffing | Rate limit do Better Auth em banco (login: 5 tentativas/min por IP); senha mínima de 12 caracteres |
+| Escalada de privilégio (mass assignment de `role`) | `input: false` em `role`/`active`; `/update-user` desabilitado; teste automatizado |
+| Cadastro público | `disableSignUp` + rota desabilitada; teste automatizado |
+| Server Actions chamadas diretamente | `requireActor` + `requirePermission` em toda action e service |
+| IDOR em usuários | Só `admin` tem `users:*`; ids validados como UUID |
+| Sessão de usuário desativado/rebaixado | Papel e status lidos do banco a cada request (sem cache em cookie); sessões apagadas ao desativar |
+| CSRF | Checagem de Origin do Better Auth + Server Actions do Next (origin check); cookies `SameSite=Lax`, `HttpOnly`, `Secure` em produção |
+| Enumeração de usuários | Mensagem genérica no login |
+| Lockout (sem admins) | Autoalteração proibida + lock transacional das linhas de admin |
+| Vazamento de dados | Service retorna só campos necessários (sem hash de senha) |
+| Telemetria externa | Telemetria do Better Auth desativada |
+
+## Tasks
+
+### Development
+
+- [ ] Schema de auth (users, sessions, accounts, verifications, rate_limits) + migration
+- [ ] Configuração do Better Auth + route handler `/api/auth/*`
+- [ ] DAL de sessão (`getCurrentActor`, `requireActor`)
+- [ ] `core/rbac/authorization` (`can`, `requirePermission`)
+- [ ] Módulo `users` (manifesto, validators, service, actions, UI)
+- [ ] shadcn/ui
+- [ ] Login, logout, shell autenticado, troca de senha
+- [ ] Script `auth:create-admin`
+
+### QA
+
+- [ ] Testes unit
+- [ ] Testes de integração
+- [ ] Pentest automatizado
+- [ ] Playwright (E2E) + CI
+
+### Security
+
+- [ ] Security review do diff
+- [ ] Pentest manual (HTTP)
+
+### Git
+
+- [ ] Branch `feature/auth-rbac`
+- [ ] Commits atômicos
+- [ ] PR para `main`
+
+### Definition of Done
+
+- [ ] Critérios de aceitação 1–9 verificados
+- [ ] lint, typecheck, unit, integração, E2E e build verdes no CI
+- [ ] Docs (architecture, repository-map, security, skill) atualizadas
 
 ---
 
