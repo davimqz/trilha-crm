@@ -15,7 +15,7 @@
 | # | Entrega | Status |
 |---|---|---|
 | 00 | Definição (stack, arquitetura, roles, roadmap) | 🟢 |
-| 01 | Foundation | 🟢 (PR aberto) |
+| 01 | Foundation | 🟢 |
 | 02 | Autenticação + RBAC + gestão de usuários | 🟢 (PR aberto) |
 | 03 | Módulo Leads | 🟡 aguardando especificação do dono do produto |
 | 04 | Módulo Clientes (+ conversão lead → cliente) | 🟡 aguardando especificação do dono do produto |
