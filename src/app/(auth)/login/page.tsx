@@ -15,7 +15,9 @@ export default async function LoginPage() {
     <main className="flex flex-1 items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-xl">Trilha CRM</CardTitle>
+          <CardTitle>
+            <h1 className="text-xl font-semibold">Trilha CRM</h1>
+          </CardTitle>
           <CardDescription>Entre com o e-mail e a senha fornecidos pelo administrador.</CardDescription>
         </CardHeader>
         <CardContent>
