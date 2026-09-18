@@ -16,8 +16,8 @@
 |---|---|---|
 | 00 | Definição (stack, arquitetura, roles, roadmap) | 🟢 |
 | 01 | Foundation | 🟢 |
-| 02 | Autenticação + RBAC + gestão de usuários | 🟢 (PR aberto) |
-| 03 | Módulo Leads | 🟡 aguardando especificação do dono do produto |
+| 02 | Autenticação + RBAC + gestão de usuários | 🟢 |
+| 03 | Módulo Leads (kanban, anotações, anexos) | 🔵 |
 | 04 | Módulo Clientes (+ conversão lead → cliente) | 🟡 aguardando especificação do dono do produto |
 | 05 | Hardening + Deploy do MVP | ⚪ |
 
@@ -205,9 +205,63 @@ bloqueio de inativos em hook de criação de sessão; criação/alteração de u
 
 ---
 
-# Entrega 03 — Leads 🟡
+# Entrega 03 — Leads
 
-Aguardando a especificação de como o dono do produto quer o cadastro de leads (campos, status, origem, fluxo).
+## Objetivo
+
+Seção Leads com kanban de estágios (drag and drop), busca, filtros, ordenação, arquivados, cadastro manual,
+painel do lead (informações, edição, anotações em rich text e anexos).
+
+**Especificação completa:** [`docs/specs/leads.md`](docs/specs/leads.md) (estrutura da tela, regras, permissões,
+critérios de aceitação 1–13, QA e ameaças). Decisões: ADR-006 (anexos) e ADR-007 (rich text).
+
+## Fora do escopo
+
+Seção Clientes e conversão lead → cliente (Entrega 04), importação CSV, reordenação manual dentro da coluna,
+edição/exclusão de anotações.
+
+## Tasks
+
+### Definição
+
+- [x] Especificação estruturada (`docs/specs/leads.md`)
+- [x] Regras de filtro/ordenação/limites decididas e documentadas
+- [x] ADR-006 e ADR-007
+
+### Development
+
+- [ ] Schema: `leads`, `lead_notes`, `lead_attachments`, `lead_attachment_contents` + migration
+- [ ] Validators: lead, telefone BR, filtros, rich text (JSON), arquivos
+- [ ] Service: listar (busca/filtros/ordenação/arquivados), obter, criar, editar, mover, arquivar, excluir,
+      reatribuir, anotações, anexos (com posse do `sales`)
+- [ ] Route handlers de upload/download de anexos
+- [ ] Componentes shadcn: dialog, sheet, tabs, dropdown-menu, alert-dialog, textarea, skeleton, sonner, tooltip, toggle
+- [ ] UI: toolbar (busca, filtros, ordenar, abas), kanban com dnd-kit, "+" por coluna, painel com abas
+- [ ] Editor e renderizador de anotações (Tiptap)
+- [ ] Menu "Leads" (manifesto do módulo)
+
+### QA
+
+- [ ] Unit (telefone, validators, rich text, tipos de arquivo)
+- [ ] Integração (service + matriz de permissões + IDOR)
+- [ ] E2E (fluxos da §8 da spec)
+
+### Security
+
+- [ ] Security review do diff
+- [ ] Pentest (XSS em anotação, upload malicioso, IDOR, mass assignment)
+
+### Git
+
+- [x] Branch `feature/leads`
+- [ ] Commits atômicos
+- [ ] PR para `main`
+
+### Definition of Done
+
+- [ ] Critérios de aceitação 1–13 verificados
+- [ ] CI verde (lint, typecheck, unit, integração, build, E2E)
+- [ ] Docs atualizadas (spec, architecture, repository-map, security)
 
 # Entrega 04 — Clientes 🟡
 
