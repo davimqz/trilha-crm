@@ -8,5 +8,5 @@ export const usersModule = defineModule({
     read: { description: "Ver usuários", roles: ["admin"] },
     manage: { description: "Criar usuários, alterar papéis, desativar e redefinir senhas", roles: ["admin"] },
   },
-  navigation: [{ label: "Usuários", href: "/settings/users", permission: "read" }],
+  navigation: [{ label: "Usuários", href: "/settings/users", permission: "read", icon: "users" }],
 });

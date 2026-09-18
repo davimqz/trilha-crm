@@ -44,13 +44,15 @@ export const exemploModule = defineModule({
     update: { description: "Editar exemplos",  roles: ["admin", "manager", "sales"] },
     delete: { description: "Excluir exemplos", roles: ["admin", "manager"] },
   },
-  navigation: [{ label: "Exemplos", href: "/exemplos", permission: "read" }],
+  // Aparece no menu lateral para quem tem a permissão; ícones disponíveis em NAV_ICONS (core/modules/types.ts)
+  navigation: [{ label: "Exemplos", href: "/exemplos", permission: "read", icon: "building" }],
 });
 ```
 
 Regras (validadas por `src/modules/registry.test.ts`):
 - `admin` em todas as permissões; demais papéis seguem o ADR-003.
 - Ações em kebab-case. Permissão final = `<id>:<ação>`.
+- Ícone novo no menu: adicione o nome em `NAV_ICONS` e o componente do lucide no mapa `ICONS` de `src/app/(app)/app-sidebar.tsx`.
 - Escopo por dono (ex.: `sales` só edita os seus) **não** é permissão do manifesto; é regra do service.
 
 ## 3. Schema — `schema.ts`

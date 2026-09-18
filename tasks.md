@@ -288,6 +288,7 @@ Aguardando especificação (campos, relação com lead, conversão).
 | IMPROVEMENT | Arraste por teclado move por pixels; mover entre colunas com as setas exige sensor customizado (hoje o status também muda em "Editar") | Entrega 03 |
 | TECH DEBT | Extrair a interface `AttachmentStorage` (ADR-006) quando houver 2º backend de arquivos; hoje o service grava direto no Postgres | Entrega 03 |
 | BUG | ~~Clicar no corpo do card não abria o painel (só o nome)~~ — corrigido em `fix/lead-card-click` | Entrega 03 |
+| IMPROVEMENT | Menu lateral estilo dashboard (sidebar recolhível, gaveta no celular, menu da conta) — `feature/sidebar-layout` | Pedido do dono do produto |
 | FEATURE | Regras pendentes do dono do produto: editar/excluir anotações, alterar lead arquivado, visibilidade do viewer (spec §12) | Entrega 03 |
 | SECURITY | **Limite de tentativas de login por conta** (independente de IP) + `trustedProxies` conforme hospedagem: o rate limit por IP pode ser contornado com `X-Forwarded-For` forjado se o servidor ficar exposto sem proxy | Entrega 02 → **obrigatório na Entrega 05** |
 | FEATURE | Recuperação de senha por e-mail | Entrega 02 (depende da integração de e-mail) |

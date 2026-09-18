@@ -18,7 +18,7 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 ├── src/
 │   ├── app/                     Rotas Next.js (App Router)
 │   │   ├── (auth)/login/        Tela de login (pública)
-│   │   ├── (app)/               Área autenticada: layout com menu por papel e página inicial
+│   │   ├── (app)/               Área autenticada: layout com menu lateral (app-sidebar.tsx) por papel e página inicial
 │   │   │   ├── leads/             Kanban de leads (estado na URL: q, owner, period, sort, view, lead, tab)
 │   │   │   ├── account/password/  Troca da própria senha
 │   │   │   └── settings/users/    Gestão de usuários (admin)
@@ -36,6 +36,7 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 │   │   ├── health/              checkDatabase
 │   │   ├── modules/             Tipos do manifesto, validação, índice de permissões
 │   │   └── rbac/                Papéis (roles.ts) e createAuthorization (can/requirePermission)
+│   ├── hooks/use-mobile.ts      Media query de celular (useSyncExternalStore)
 │   ├── lib/                     utils.ts (cn), format.ts (datas em America/Sao_Paulo)
 │   └── modules/                 Módulos de negócio
 │       ├── authorization.ts     can/requirePermission ligados ao registry

@@ -29,7 +29,13 @@ test.describe("autenticação", () => {
     await page.getByRole("button", { name: "Entrar" }).click();
     await expect(page.getByRole("heading", { name: `Olá, ${E2E_USERS.logout.name}` })).toBeVisible();
 
-    await page.getByRole("button", { name: "Sair" }).click();
+    // Menu lateral: itens do papel sales (sem Usuários) e menu da conta com "Sair"
+    const nav = page.getByRole("navigation", { name: "Principal" });
+    await expect(nav.getByRole("link", { name: "Leads" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Usuários" })).toHaveCount(0);
+
+    await page.getByRole("button", { name: `Conta de ${E2E_USERS.logout.name}` }).click();
+    await page.getByRole("menuitem", { name: "Sair" }).click();
     await expect(page).toHaveURL(/\/login$/);
 
     await page.goto("/");
