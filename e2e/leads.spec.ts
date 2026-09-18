@@ -18,6 +18,8 @@ async function createLead(page: Page, column: string, lead: { name: string; emai
   await dialog.getByLabel("Telefone com DDD").fill(lead.phone);
   await dialog.getByRole("button", { name: "Cadastrar" }).click();
   await expect(page.getByTestId(`lead-card-${lead.email}`)).toBeVisible();
+  // Espera o diálogo terminar de fechar: durante a animação o overlay ainda captura o ponteiro
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 }
 
 // Solta na mesma altura do card: as colunas se esticam até a mais alta, então a área de drop cobre essa linha
