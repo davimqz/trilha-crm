@@ -76,8 +76,26 @@ test.describe("leads (admin)", () => {
     await dragTo(page, page.getByTestId("lead-card-helena@e2e.test"), page.getByTestId("column-meeting_scheduled"));
     await expect(page.getByTestId("column-meeting_scheduled").getByTestId("lead-card-helena@e2e.test")).toBeVisible();
 
+    // Arrastar não pode abrir o painel
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
     await page.reload();
     await expect(page.getByTestId("column-meeting_scheduled").getByTestId("lead-card-helena@e2e.test")).toBeVisible();
+  });
+
+  test("clicar em qualquer parte do card (ou Enter) abre o painel", async ({ page }) => {
+    await page.goto("/leads");
+    await createLead(page, "Prospect", { name: "Nina Clique", email: "nina@e2e.test", phone: "11911110000" });
+    const card = page.getByTestId("lead-card-nina@e2e.test");
+
+    await card.getByText("(11) 91111-0000").click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "Nina Clique" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+
+    await card.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "Nina Clique" })).toBeVisible();
   });
 
   test("busca por nome, filtro e ordenação ficam na URL", async ({ page }) => {
@@ -205,7 +223,9 @@ test.describe("leads (viewer)", () => {
     await expect(page.getByRole("button", { name: /Adicionar lead em/ })).toHaveCount(0);
     await expect(page.getByTestId(`lead-card-${ADMIN_LEAD.email}`)).not.toHaveAttribute("aria-roledescription", /arrastável/);
 
-    await openLead(page, ADMIN_LEAD.name);
+    // Card não arrastável também abre ao clicar no corpo
+    await page.getByTestId(`lead-card-${ADMIN_LEAD.email}`).getByText(ADMIN_LEAD.email).click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: ADMIN_LEAD.name })).toBeVisible();
     await page.getByRole("tab", { name: "Editar" }).click();
     await expect(page.getByLabel("Nome", { exact: true })).toBeDisabled();
     await expect(page.getByRole("button", { name: /Arquivar|Excluir/ })).toHaveCount(0);
@@ -295,6 +315,9 @@ test.describe("pentest: endpoints de anexos e Server Actions", () => {
     const page = await salesContext.newPage();
     await page.goto("/leads");
     await createLead(page, "Prospect", { name: "Mário Captura", email: "mario@e2e.test", phone: "11922221111" });
+    // Só o card do Mário na tela: o arraste não depende de quantos leads os outros testes criaram
+    await page.goto("/leads?q=M%C3%A1rio");
+    await expect(page.getByTestId("lead-card-mario@e2e.test")).toBeVisible();
 
     const actionRequest = page.waitForRequest((request) => request.method() === "POST" && !!request.headers()["next-action"]);
     await dragTo(page, page.getByTestId("lead-card-mario@e2e.test"), page.getByTestId("column-first_contact"));

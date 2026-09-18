@@ -77,7 +77,8 @@ Assim o link pode ser compartilhado e o botão "voltar" do navegador funciona.
 
 ### 3.7 Card do lead
 Mostra nome, e-mail, telefone formatado, responsável e data/hora da última atualização (ex.: "18/09 14:32").
-O **nome** é o link que abre o painel; quem pode editar o lead arrasta o card inteiro (ícone de alça à direita).
+**Clicar em qualquer parte do card** (ou Enter pelo teclado) abre o painel. Quem pode editar o lead também arrasta o card:
+o arraste só começa depois de o ponteiro andar alguns pixels, então um clique simples nunca arrasta. Ctrl+clique no nome abre em nova aba.
 **[Decisão]** Data absoluta em vez de "há X": evita divergência entre o horário do servidor e o do navegador.
 
 ## 4. Painel do lead (ao clicar no card)
