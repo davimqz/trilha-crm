@@ -16,5 +16,5 @@ export const leadsModule = defineModule({
     assign: { description: "Reatribuir o responsável", roles: ["admin", "manager"] },
     delete: { description: "Excluir leads", roles: ["admin", "manager"] },
   },
-  navigation: [{ label: "Leads", href: "/leads", permission: "read" }],
+  navigation: [{ label: "Leads", href: "/leads", permission: "read", icon: "kanban" }],
 });
