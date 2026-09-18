@@ -80,7 +80,7 @@ src/modules/<nome>/
 
 ## ADR-003 — Modelo de papéis (RBAC)
 
-**Status:** Proposta (aguardando validação do dono do produto)
+**Status:** Aceita (2026-09-18, aprovada pelo dono do produto)
 
 ### Decisão
 
@@ -118,3 +118,33 @@ Jobs/workflows (WhatsApp, e-mail, automações) serão decididos na entrega corr
 (candidatos: fila baseada em Postgres, Vercel Workflow/Queues, Cloudflare Queues/Workflows).
 
 O código é mantido **agnóstico de plataforma** até lá (sem APIs específicas de provedor).
+
+---
+
+## ADR-005 — Autenticação com Better Auth, sem o plugin admin
+
+**Status:** Aceita (2026-09-18)
+
+### Contexto
+
+O plugin `admin` do Better Auth traz papéis próprios e expõe muitos endpoints HTTP (impersonação, remoção de
+usuário, troca de senha de terceiros, listagem). Isso criaria duas fontes de verdade para permissões e
+aumentaria a superfície de ataque.
+
+### Decisão
+
+- Better Auth apenas para identidade e sessão (e-mail/senha, cookies, rate limit).
+- `role` e `active` são campos adicionais do usuário com `input: false` (nunca aceitos do cliente).
+- Gestão de usuários (criar, papel, ativar/desativar, redefinir senha) só pelo service do módulo `users`,
+  que aplica o nosso RBAC e usa o `internalAdapter` do Better Auth.
+- Hook `session.create.before` bloqueia login de usuário inativo; desativar apaga as sessões existentes.
+- Endpoints não usados ficam em `disabledPaths` (cadastro, update-user, reset de senha por e-mail etc.).
+- Rate limit com armazenamento em banco (funciona com múltiplas instâncias/serverless).
+- Login e troca de senha passam pelo endpoint HTTP (`/api/auth/*`) para que o rate limit se aplique;
+  chamadas `auth.api.*` diretas no servidor não passam pelo rate limit.
+- Telemetria desativada.
+
+### Consequências
+
+- Recuperação de senha por e-mail fica para quando houver integração de e-mail; até lá o admin redefine.
+- O papel e o status são lidos do banco a cada request (sem cache de sessão em cookie): mudanças valem na hora.

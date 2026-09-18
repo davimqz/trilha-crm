@@ -1,5 +1,5 @@
-// Agrega as tabelas de todos os módulos para o Drizzle e o drizzle-kit.
+// Agrega as tabelas do core e de todos os módulos para o Drizzle e o drizzle-kit.
 // Use caminhos relativos: o drizzle-kit não resolve o alias "@/".
-// Ao criar um módulo, adicione aqui: export * from "../../modules/<modulo>/schema";
+// Ao criar um módulo com tabelas, adicione: export * from "../../modules/<modulo>/schema";
 
-export {};
+export * from "../auth/schema";
