@@ -11,7 +11,9 @@ import { getAuth } from ".";
 
 // DAL de sessão: papel e status vêm do banco a cada request (sem cache em cookie)
 export const getCurrentActor = cache(async (): Promise<Actor | null> => {
-  const session = await getAuth().api.getSession({ headers: await headers() });
+  // headers() primeiro: marca a rota como dinâmica antes de tocar no env, então o build não exige segredos
+  const requestHeaders = await headers();
+  const session = await getAuth().api.getSession({ headers: requestHeaders });
   if (!session) return null;
 
   const { id, name, email, role, active } = session.user;
