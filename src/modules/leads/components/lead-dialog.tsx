@@ -1,6 +1,6 @@
 "use client";
 
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { LEAD_STATUS_LABELS, type LeadTab } from "../constants";
@@ -18,23 +18,24 @@ export type SelectedLead = {
   attachments: LeadAttachment[];
 };
 
-type LeadSheetProps = { selected: SelectedLead | null; tab: LeadTab; users: AssignableUser[] };
+type LeadDialogProps = { selected: SelectedLead | null; tab: LeadTab; users: AssignableUser[] };
 
-export function LeadSheet({ selected, tab, users }: LeadSheetProps) {
+// Card do lead em modal centralizado (cabeçalho fixo; o conteúdo das abas rola dentro do modal)
+export function LeadDialog({ selected, tab, users }: LeadDialogProps) {
   const { push, replace } = useLeadsUrl();
   const close = () => push({ lead: null, tab: null });
 
   return (
-    <Sheet open={selected !== null} onOpenChange={(open) => !open && close()}>
-      <SheetContent className="w-full gap-0 data-[side=right]:sm:max-w-3xl" aria-describedby={undefined}>
+    <Dialog open={selected !== null} onOpenChange={(open) => !open && close()}>
+      <DialogContent className="flex max-h-[90vh] flex-col gap-0 p-0 sm:max-w-3xl" data-testid="lead-dialog">
         {selected && (
           <>
-            <SheetHeader className="border-b">
-              <SheetTitle className="text-lg">{selected.lead.name}</SheetTitle>
-              <SheetDescription>
+            <DialogHeader className="border-b p-4 pr-12">
+              <DialogTitle className="text-lg">{selected.lead.name}</DialogTitle>
+              <DialogDescription>
                 {LEAD_STATUS_LABELS[selected.lead.status]} · Responsável: {selected.lead.ownerName}
-              </SheetDescription>
-            </SheetHeader>
+              </DialogDescription>
+            </DialogHeader>
             <Tabs
               value={tab}
               onValueChange={(value) => replace({ tab: value === "info" ? null : String(value) })}
@@ -61,7 +62,7 @@ export function LeadSheet({ selected, tab, users }: LeadSheetProps) {
             </Tabs>
           </>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
