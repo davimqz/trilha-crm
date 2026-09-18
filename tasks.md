@@ -16,7 +16,7 @@
 |---|---|---|
 | 00 | Definição (stack, arquitetura, roles, roadmap) | 🟢 |
 | 01 | Foundation | 🟢 (PR aberto) |
-| 02 | Autenticação + RBAC + gestão de usuários | 🔵 |
+| 02 | Autenticação + RBAC + gestão de usuários | 🟢 (PR aberto) |
 | 03 | Módulo Leads | 🟡 aguardando especificação do dono do produto |
 | 04 | Módulo Clientes (+ conversão lead → cliente) | 🟡 aguardando especificação do dono do produto |
 | 05 | Hardening + Deploy do MVP | ⚪ |
@@ -34,7 +34,7 @@ Definir stack, arquitetura, modelo de papéis e roadmap antes de qualquer códig
 - [x] Levantar requisitos iniciais (uso interno, < 30 leads, sem dados sensíveis no MVP)
 - [x] Escolher stack — ADR-001
 - [x] Definir arquitetura modular — ADR-002
-- [x] Propor modelo de papéis — ADR-003 (aguardando validação)
+- [x] Propor modelo de papéis — ADR-003 (aprovado)
 - [x] Mapear opções de hospedagem — ADR-004
 - [x] Roadmap de produto (abaixo)
 
@@ -170,38 +170,38 @@ bloqueio de inativos em hook de criação de sessão; criação/alteração de u
 
 ### Development
 
-- [ ] Schema de auth (users, sessions, accounts, verifications, rate_limits) + migration
-- [ ] Configuração do Better Auth + route handler `/api/auth/*`
-- [ ] DAL de sessão (`getCurrentActor`, `requireActor`)
-- [ ] `core/rbac/authorization` (`can`, `requirePermission`)
-- [ ] Módulo `users` (manifesto, validators, service, actions, UI)
-- [ ] shadcn/ui
-- [ ] Login, logout, shell autenticado, troca de senha
-- [ ] Script `auth:create-admin`
+- [x] Schema de auth (users, sessions, accounts, verifications, rate_limits) + migration
+- [x] Configuração do Better Auth + route handler `/api/auth/*`
+- [x] DAL de sessão (`getCurrentActor`, `requireActor`)
+- [x] `core/rbac/authorization` (`can`, `requirePermission`)
+- [x] Módulo `users` (manifesto, validators, service, actions, UI)
+- [x] shadcn/ui
+- [x] Login, logout, shell autenticado, troca de senha
+- [x] Script `auth:create-admin`
 
 ### QA
 
-- [ ] Testes unit
-- [ ] Testes de integração
-- [ ] Pentest automatizado
-- [ ] Playwright (E2E) + CI
+- [x] Testes unit
+- [x] Testes de integração
+- [x] Pentest automatizado
+- [x] Playwright (E2E) + CI
 
 ### Security
 
-- [ ] Security review do diff
-- [ ] Pentest manual (HTTP)
+- [x] Security review do diff
+- [x] Pentest (HTTP no handler + replay de Server Action no E2E)
 
 ### Git
 
-- [ ] Branch `feature/auth-rbac`
-- [ ] Commits atômicos
-- [ ] PR para `main`
+- [x] Branch `feature/auth-rbac`
+- [x] Commits atômicos
+- [x] PR para `main`
 
 ### Definition of Done
 
-- [ ] Critérios de aceitação 1–9 verificados
+- [x] Critérios de aceitação 1–9 verificados
 - [ ] lint, typecheck, unit, integração, E2E e build verdes no CI
-- [ ] Docs (architecture, repository-map, security, skill) atualizadas
+- [x] Docs (architecture, repository-map, security, skill) atualizadas
 
 ---
 
@@ -228,8 +228,10 @@ Aguardando especificação (campos, relação com lead, conversão).
 |---|---|---|
 | SECURITY | CSP com nonce (remover `'unsafe-inline'` de scripts) | Entrega 01 |
 | TECH DEBT | Alerta moderado GHSA-67mh no `esbuild` transitivo do `drizzle-kit` (dev-only) | Entrega 01 |
-| TECH DEBT | Configurar Playwright quando houver a primeira tela com fluxo | Entrega 01 |
+| ~~TECH DEBT~~ | ~~Configurar Playwright~~ — feito na Entrega 02 | Entrega 01 |
 | IMPROVEMENT | Lint de fronteiras entre módulos (proibir import de internals de outro módulo) | Entrega 01 |
+| SECURITY | **Limite de tentativas de login por conta** (independente de IP) + `trustedProxies` conforme hospedagem: o rate limit por IP pode ser contornado com `X-Forwarded-For` forjado se o servidor ficar exposto sem proxy | Entrega 02 → **obrigatório na Entrega 05** |
+| FEATURE | Recuperação de senha por e-mail | Entrega 02 (depende da integração de e-mail) |
 
 ---
 

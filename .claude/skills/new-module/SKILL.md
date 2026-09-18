@@ -72,18 +72,26 @@ Regras (validadas por `src/modules/registry.test.ts`):
 
 ## 5. Service — `service.ts`
 
-- `import "server-only"`.
-- Toda função recebe o **contexto do usuário** (sessão) e começa checando permissão
-  (`requirePermission`, disponível a partir da Entrega 02). Deny by default.
+- `import "server-only"`. Referência completa: `src/modules/users/service.ts`.
+- Fábrica testável: `export function createXService({ db }: { db: Database })` + `export function getXService()`
+  que usa `getDb()`. Os testes de integração criam o service com o banco de teste.
+- Assinatura: `(actor: Actor, input: unknown)`. O `Actor` vem de `requireActor()`; o input é **não confiável**.
+- Primeira linha de cada método: `requirePermission(actor, "<id>:<ação>")` (de `@/modules/authorization`). Deny by default.
 - Valida a entrada com o schema Zod **no servidor**, mesmo que o formulário já valide.
 - Checagens de posse (IDOR): ao buscar/alterar por id, confirme que o usuário pode acessar **aquele** registro.
 - Queries só via Drizzle (parametrizadas). Nada de SQL com interpolação de string.
-- Erros de domínio com mensagens seguras; não repasse erro do banco para o cliente.
+- Erros com `DomainError` / `NotFoundError` / `ConflictError` (`@/core/errors`), mensagens em pt-BR seguras
+  para o usuário; nunca repasse erro do banco ao cliente. Violação de UNIQUE: `isUniqueViolation`.
+- Operações sensíveis a concorrência ou a papéis: transação + `.for("update")` nas linhas envolvidas.
+- Retorne DTOs só com os campos necessários.
 - Outros módulos consomem este módulo **somente** pelas funções exportadas aqui.
 
 ## 6. Actions e UI
 
-- `actions.ts` com `"use server"`: parse do FormData → chama o service → `revalidatePath`. Sem regra de negócio.
+- `actions.ts` com `"use server"`: `const actor = await requireActor()` → `runAction(() => getXService().op(actor, {...}))`
+  com campos lidos via `formString` → `revalidatePath` no sucesso. Sem regra de negócio.
+  Componentes client importam `IDLE` de `@/core/actions/action-state` (nunca de `action-result`).
+- Pages: `requireActor()` + `if (!can(actor, "<id>:read")) return <AccessDenied />`.
 - Server Actions são endpoints públicos: a autorização está no service, nunca só no botão escondido.
 - UI com estados de loading, vazio, erro e sucesso; labels acessíveis; texto em pt-BR.
 - Antes de escrever código Next.js, leia o guia relevante em `node_modules/next/dist/docs/` (ver `AGENTS.md`).
@@ -100,10 +108,13 @@ export const MODULES: readonly ModuleManifest[] = [exemploModule];
 ## 8. Testes (obrigatórios)
 
 - **Unit** (`__tests__/validators.test.ts`): entradas válidas, limites, inválidas, campos proibidos.
-- **Integração** (`__tests__/service.integration.test.ts`, banco de teste real):
+- **Integração** (`__tests__/service.integration.test.ts`, banco de teste real; `test/helpers/auth-context.ts`
+  cria usuários de cada papel):
   happy path; cada papel × cada ação (matriz de permissões); IDOR (usuário A acessando registro de B);
   registro inexistente; entrada inválida rejeitada no servidor.
-- `pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration && pnpm build`.
+- **E2E** (`e2e/<id>.spec.ts`): fluxo principal na UI e acesso negado para papel sem permissão.
+- Confirme que os testes pegam falhas: remova temporariamente um `requirePermission` e veja o teste quebrar.
+- `pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration && pnpm build && pnpm test:e2e`.
 
 ## 9. Segurança e pentest
 

@@ -37,7 +37,22 @@ PostgreSQL
   (ids únicos, kebab-case, papéis conhecidos, admin em tudo, navegação coerente).
 - `core/modules/permissions.ts` gera o índice papel → permissões (`<módulo>:<ação>`), deny by default,
   e a navegação filtrada por papel.
-- A aplicação dessas permissões em sessões reais chega na Entrega 02 (Better Auth + `requirePermission`).
+- `src/modules/authorization.ts` expõe `can()` e `requirePermission()` sobre o registry.
+
+## Autenticação e autorização (ADR-005)
+
+```text
+Browser ──fetch JSON──▶ /api/auth/* ──allowlist──▶ Better Auth (sessão, rate limit, CSRF)
+Browser ──Server Action──▶ actions.ts ──requireActor()──▶ service.ts ──requirePermission() + lock/revalidação──▶ Postgres
+Page (RSC) ──requireActor() + can()──▶ service.ts
+```
+
+- `core/auth/session.ts` é a DAL de sessão: `getCurrentActor()` (memoizado por request) e `requireActor()` (redireciona para `/login`).
+- Layouts apenas montam o menu; **cada page, action e service** revalida sessão e permissão.
+- Services são criados por fábrica (`createXService({ db, auth })`) para serem testados com o banco de teste;
+  `getXService()` fornece a instância da aplicação.
+- Métodos de service recebem `input: unknown` e validam com Zod: toda entrada é não confiável.
+- Actions convertem exceções com `runAction()`: só mensagens de `DomainError`, `ForbiddenError` e Zod chegam ao cliente.
 
 ## Banco de dados
 
@@ -57,7 +72,7 @@ PostgreSQL
 |---|---|---|
 | Unit | `*.test.ts` | `pnpm test` |
 | Integração (Postgres real) | `*.integration.test.ts` | `pnpm test:integration` |
-| E2E | a definir nas entregas com UI (Playwright) | — |
+| E2E (build de produção + banco de teste) | `e2e/*.spec.ts` | `pnpm build && pnpm test:e2e` |
 
 ## Futuro
 
