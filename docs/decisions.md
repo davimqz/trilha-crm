@@ -148,3 +148,51 @@ aumentaria a superfície de ataque.
 
 - Recuperação de senha por e-mail fica para quando houver integração de e-mail; até lá o admin redefine.
 - O papel e o status são lidos do banco a cada request (sem cache de sessão em cookie): mudanças valem na hora.
+
+---
+
+## ADR-006 — Armazenamento de anexos no Postgres
+
+**Status:** Aceita (2026-09-18)
+
+### Contexto
+
+Leads precisam de anexos (PDF, DOC, planilhas, imagens). A hospedagem ainda não foi decidida (ADR-004) e o volume
+é pequeno (< 30 leads, poucos arquivos).
+
+### Decisão
+
+- Conteúdo em tabela própria (`lead_attachment_contents`, coluna `bytea`), separada dos metadados, para que
+  listagens nunca carreguem os arquivos.
+- Acesso concentrado no service do módulo (`addAttachment`, `getAttachmentFile`, `removeAttachment`). Uma interface
+  `AttachmentStorage` será extraída quando existir um segundo backend (tech debt registrado).
+- Limites: 10 MB por arquivo, 20 anexos por lead, tipos em lista permitida, validados pelo **conteúdo**.
+- Download por route handler autenticado, sempre como `attachment` e com `nosniff` + `CSP: sandbox`.
+
+### Alternativas
+
+- **Vercel Blob / S3 / R2:** melhores para volume, mas dependem da hospedagem. Como o acesso está concentrado no service, a migração é localizada.
+- **Disco local:** não funciona em serverless e complica backups.
+
+### Consequências
+
+- Backups do banco incluem os anexos. Revisar quando o volume passar de ~1 GB.
+
+---
+
+## ADR-007 — Anotações em rich text (Tiptap) guardadas como JSON
+
+**Status:** Aceita (2026-09-18)
+
+### Decisão
+
+- Editor Tiptap 3 com apenas: parágrafo, negrito, sublinhado, cor (paleta fixa), lista com marcadores e numerada, quebra de linha.
+  Links, imagens, HTML e demais extensões desativados.
+- Conteúdo salvo como **JSON do ProseMirror**, validado no servidor por schema Zod estrito (nós, marcas e cores permitidos;
+  profundidade e tamanho limitados).
+- Renderização por um componente React próprio que só conhece os nós permitidos (sem `dangerouslySetInnerHTML`).
+
+### Consequências
+
+- Não há como injetar HTML/estilos arbitrários: XSS armazenado fica estruturalmente impossível nesse campo.
+- Novos recursos de formatação exigem atualizar schema e renderizador juntos (com teste).

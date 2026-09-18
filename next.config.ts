@@ -18,7 +18,6 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: contentSecurityPolicy },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -29,7 +28,19 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      { source: "/(.*)", headers: securityHeaders },
+      // Headers do next.config sobrescrevem os do route handler: a CSP global não pode cair no download,
+      // que precisa de "sandbox" (ADR-006). Por isso a rota de download fica fora dela e tem regra própria.
+      {
+        source: "/((?!api/leads/[^/]+/attachments/[^/]+$).*)",
+        headers: [{ key: "Content-Security-Policy", value: contentSecurityPolicy }],
+      },
+      {
+        source: "/api/leads/:leadId/attachments/:attachmentId",
+        headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; sandbox" }],
+      },
+    ];
   },
 };
 

@@ -1,0 +1,145 @@
+"use client";
+
+import { PaperclipIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useRef, useState, useTransition, type ChangeEvent } from "react";
+import { toast } from "sonner";
+
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatShortDateTime } from "@/lib/format";
+
+import { removeAttachmentAction } from "../actions";
+import { ATTACHMENT_MAX_BYTES, ATTACHMENTS_PER_LEAD_MAX } from "../constants";
+import { ACCEPTED_EXTENSIONS, ATTACHMENT_KINDS, formatFileSize } from "../file-types";
+import type { LeadAttachment } from "../service";
+
+type LeadAttachmentsProps = { leadId: string; attachments: LeadAttachment[]; canEdit: boolean };
+
+export function LeadAttachments({ leadId, attachments, canEdit }: LeadAttachmentsProps) {
+  const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [removing, startTransition] = useTransition();
+
+  async function upload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    // Checagem antecipada só para UX; o servidor valida tamanho e conteúdo de novo
+    if (file.size > ATTACHMENT_MAX_BYTES) {
+      toast.error("O arquivo passa do limite de 10 MB.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const body = new FormData();
+      body.set("file", file);
+      const response = await fetch(`/api/leads/${leadId}/attachments`, { method: "POST", body });
+      if (response.ok) {
+        toast.success("Anexo adicionado.");
+        router.refresh();
+      } else {
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+        toast.error(payload?.message ?? "Não foi possível anexar o arquivo.");
+      }
+    } catch {
+      toast.error("Falha de conexão ao enviar o arquivo.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function remove(attachmentId: string) {
+    startTransition(async () => {
+      const response = await removeAttachmentAction(leadId, attachmentId);
+      if (response.status === "success") toast.success(response.message);
+      else toast.error(response.message);
+    });
+  }
+
+  const limitReached = attachments.length >= ATTACHMENTS_PER_LEAD_MAX;
+
+  return (
+    <div className="grid gap-4">
+      {canEdit && (
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            ref={inputRef}
+            type="file"
+            className="sr-only"
+            accept={ACCEPTED_EXTENSIONS.join(",")}
+            onChange={upload}
+            aria-label="Selecionar arquivo para anexar"
+            data-testid="attachment-input"
+          />
+          <Button type="button" onClick={() => inputRef.current?.click()} disabled={uploading || limitReached}>
+            <PlusIcon />
+            {uploading ? "Enviando…" : "Adicionar"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            PDF, DOC, DOCX, XLS, XLSX, PNG, JPG, TXT ou CSV · até 10 MB · máximo de {ATTACHMENTS_PER_LEAD_MAX} anexos
+          </p>
+        </div>
+      )}
+
+      {attachments.length === 0 ? (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <PaperclipIcon className="size-4" /> Nenhum anexo.
+        </p>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Tamanho</TableHead>
+              <TableHead>Data do anexo</TableHead>
+              {canEdit && <TableHead className="sr-only">Ações</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {attachments.map((attachment) => (
+              <TableRow key={attachment.id} data-testid="attachment-row">
+                <TableCell className="max-w-56 truncate font-medium">
+                  <a
+                    href={`/api/leads/${leadId}/attachments/${attachment.id}`}
+                    className="underline-offset-4 hover:underline"
+                    title={`Baixar ${attachment.fileName}`}
+                  >
+                    {attachment.fileName}
+                  </a>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{ATTACHMENT_KINDS[attachment.kind].label}</Badge>
+                </TableCell>
+                <TableCell>{formatFileSize(attachment.sizeBytes)}</TableCell>
+                <TableCell className="whitespace-nowrap" title={attachment.uploadedByName}>
+                  {formatShortDateTime(attachment.createdAt)}
+                </TableCell>
+                {canEdit && (
+                  <TableCell className="text-right">
+                    <ConfirmDialog
+                      trigger={
+                        <Button type="button" variant="ghost" size="icon-sm" disabled={removing} aria-label={`Remover ${attachment.fileName}`} title="Remover">
+                          <Trash2Icon />
+                        </Button>
+                      }
+                      title="Remover anexo?"
+                      description={`O arquivo "${attachment.fileName}" será removido deste lead.`}
+                      confirmLabel="Remover"
+                      onConfirm={() => remove(attachment.id)}
+                    />
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
+  );
+}

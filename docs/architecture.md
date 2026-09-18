@@ -54,6 +54,18 @@ Page (RSC) ──requireActor() + can()──▶ service.ts
 - Métodos de service recebem `input: unknown` e validam com Zod: toda entrada é não confiável.
 - Actions convertem exceções com `runAction()`: só mensagens de `DomainError`, `ForbiddenError` e Zod chegam ao cliente.
 
+## Armadilhas conhecidas
+
+- **Constantes em arquivos `"use client"`:** importadas por um Server Component viram referências de client, não valores.
+  Constantes compartilhadas ficam em arquivos sem diretiva (ex.: `modules/leads/constants.ts`).
+- **Objetos do Tiptap em Server Actions:** não são "plain objects"; envie `JSON.parse(JSON.stringify(...))`.
+- **Drizzle 0.45:** dois aliases da mesma tabela com `leftJoin` na mesma query tipam o resultado como `never[]`.
+  Use subconsulta correlacionada para nomes de usuário.
+- **Formulários com Server Actions:** o React 19 reseta o form após a action; devolva os valores com
+  `withSubmittedValues` e remonte o form com `key` (inputs do Base UI não aceitam troca de `defaultValue`).
+- **Headers do `next.config.ts` sobrescrevem os do route handler** (ex.: CSP do download).
+- **Ordenação por texto:** use a collation ICU `"und-x-icu"` (a imagem Alpine do Postgres não tem locales).
+
 ## Banco de dados
 
 - Schema por módulo, agregado em `src/core/db/schema.ts` para o Drizzle e o drizzle-kit.

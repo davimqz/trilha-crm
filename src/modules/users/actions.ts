@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { formString, runAction, type ActionResult } from "@/core/actions/action-result";
+import { formString, runAction, withSubmittedValues, type ActionResult } from "@/core/actions/action-result";
 import { requireActor } from "@/core/auth/session";
 
 import { getUsersService } from "./service";
@@ -23,7 +23,7 @@ export async function createUserAction(_previous: ActionResult, formData: FormDa
     return "Usuário criado. Envie a senha inicial por um canal seguro.";
   });
   if (result.status === "success") revalidatePath(USERS_PATH);
-  return result;
+  return withSubmittedValues(result, formData, ["name", "email", "role"]);
 }
 
 export async function changeRoleAction(_previous: ActionResult, formData: FormData): Promise<ActionResult> {

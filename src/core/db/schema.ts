@@ -3,3 +3,4 @@
 // Ao criar um módulo com tabelas, adicione: export * from "../../modules/<modulo>/schema";
 
 export * from "../auth/schema";
+export * from "../../modules/leads/schema";

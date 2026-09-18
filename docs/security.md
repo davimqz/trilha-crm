@@ -87,6 +87,45 @@ Validação dos testes por mutação: remover o lock, a revalidação do ator ou
 
 Security review do diff completo da branch: nenhuma vulnerabilidade de alta confiança.
 
+## Controles atuais (Entrega 03 — Leads)
+
+| Controle | Onde |
+|---|---|
+| Permissões por ação + posse (`update`/`archive` só no próprio lead para `sales`; `*-any` para admin/manager) | `leads/module.ts`, `leads/service.ts` |
+| Lock de linha + checagem de posse com dados do banco em toda escrita | `leads/service.ts` |
+| Anotações em JSON validado por schema estrito; renderização sem `dangerouslySetInnerHTML`; cor só da paleta | `leads/rich-text.ts`, `rich-text-view.tsx` |
+| Anexos: tipo confirmado pelo conteúdo (assinatura) + extensão; 10 MB; 20 por lead; nome higienizado | `leads/file-types.ts`, `leads/service.ts` |
+| Upload: mesma origem (`Origin` + `Sec-Fetch-Site`), sessão, `Content-Length` checado antes de ler o corpo | `leads/http.ts` |
+| Download: `attachment`, MIME da allowlist, `nosniff`, CSP `default-src 'none'; sandbox`, `no-store` | `leads/http.ts`, `next.config.ts` |
+| Busca com `%`/`_` literais; ordenação/período por enum | `leads/service.ts` |
+| Parâmetros da URL validados com fallback seguro | `app/(app)/leads/page.tsx` |
+
+## Pentest — Entrega 03
+
+Automatizado (`src/modules/leads/__tests__/`, `e2e/leads.spec.ts`):
+
+| Teste | Resultado |
+|---|---|
+| `sales` alterando/movendo/arquivando/anotando/anexando em lead de outro (IDOR) | ✅ ForbiddenError |
+| `sales` reproduzindo a Server Action de mover com o id do lead do admin | ✅ bloqueado, lead inalterado |
+| `viewer` em qualquer escrita (service, UI e endpoint de upload) | ✅ bloqueado |
+| Reatribuição de responsável sem `leads:assign` / para usuário inativo | ✅ bloqueada |
+| Mass assignment (`ownerId`, `archivedAt`) | ✅ rejeitado |
+| XSS em anotação: HTML/script digitado, atributos `style`/`onclick` injetados, cor com CSS | ✅ texto puro; atributos descartados; nenhum script executa |
+| Upload: HTML como `.pdf`, `.html`, `.svg`, executável renomeado, ZIP qualquer como `.docx`, vazio, > 10 MB, 21º anexo, nome `../../` | ✅ recusados/higienizados |
+| Upload sem sessão (401), de outra origem (403), acima do limite (413) | ✅ |
+| Download sem sessão (401); anexo pedido por outro lead (404); headers seguros | ✅ |
+| Busca com `%` e `_` | ✅ tratados como texto |
+| Exclusão em cascata (anotações, anexos, conteúdos) | ✅ |
+
+Achados corrigidos durante a entrega:
+- **CSP do download sobrescrita pela CSP global** do `next.config.ts` (o `sandbox` não chegava ao navegador) → regra por rota.
+- **Tipos `never[]` em queries com dois aliases de `users`** (Drizzle 0.45) desligavam a checagem de tipos → nomes por subconsulta.
+
+Validação por mutação: desligar a checagem de posse faz os testes de IDOR falharem.
+
+Security review do diff completo da branch: nenhuma vulnerabilidade de alta confiança.
+
 ## Roadmap de segurança
 
 - Entrega 05: limite de tentativas de login por conta (independente de IP) e `trustedProxies` conforme a hospedagem.
