@@ -164,13 +164,14 @@ Leads precisam de anexos (PDF, DOC, planilhas, imagens). A hospedagem ainda não
 
 - Conteúdo em tabela própria (`lead_attachment_contents`, coluna `bytea`), separada dos metadados, para que
   listagens nunca carreguem os arquivos.
-- Acesso via interface `AttachmentStorage` (`put`/`get`/`delete`), com implementação Postgres.
+- Acesso concentrado no service do módulo (`addAttachment`, `getAttachmentFile`, `removeAttachment`). Uma interface
+  `AttachmentStorage` será extraída quando existir um segundo backend (tech debt registrado).
 - Limites: 10 MB por arquivo, 20 anexos por lead, tipos em lista permitida, validados pelo **conteúdo**.
 - Download por route handler autenticado, sempre como `attachment` e com `nosniff` + `CSP: sandbox`.
 
 ### Alternativas
 
-- **Vercel Blob / S3 / R2:** melhores para volume, mas dependem da hospedagem. A interface permite migrar depois.
+- **Vercel Blob / S3 / R2:** melhores para volume, mas dependem da hospedagem. Como o acesso está concentrado no service, a migração é localizada.
 - **Disco local:** não funciona em serverless e complica backups.
 
 ### Consequências

@@ -76,8 +76,9 @@ Assim o link pode ser compartilhado e o botão "voltar" do navegador funciona.
 - O lead nasce no estágio da coluna, com o usuário que cadastrou como **responsável**.
 
 ### 3.7 Card do lead
-Mostra nome, e-mail, telefone formatado, responsável e "atualizado há X". O card inteiro é clicável e abre o painel do lead.
-Quem pode editar o lead consegue arrastar o card.
+Mostra nome, e-mail, telefone formatado, responsável e data/hora da última atualização (ex.: "18/09 14:32").
+O **nome** é o link que abre o painel; quem pode editar o lead arrasta o card inteiro (ícone de alça à direita).
+**[Decisão]** Data absoluta em vez de "há X": evita divergência entre o horário do servidor e o do navegador.
 
 ## 4. Painel do lead (ao clicar no card)
 
@@ -93,7 +94,8 @@ Nome, e-mail, telefone, status, responsável, criado em/por, **última edição 
   anotações e anexos. Esta ação não pode ser desfeita."*
 
 ### 4.3 Anotações
-- Editor com: **Negrito**, **Sublinhado**, **Cor do texto** (paleta fixa de 8 cores), **Lista com marcadores** e **Lista numerada**.
+- Editor com: **Negrito**, **Sublinhado**, **Cor do texto** (paleta fixa de 8 cores, exibida direto na barra),
+  **Lista com marcadores** e **Lista numerada**. Atalhos: Ctrl+B e Ctrl+U.
 - Botão **Adicionar anotação**.
 - Histórico, da mais recente para a mais antiga:
   - **Título:** data e hora da anotação (ex.: "18/09/2026 às 14:32"), acompanhada do autor.
@@ -135,9 +137,9 @@ A interface esconde o que o usuário não pode fazer, mas **toda regra é verifi
 
 | Estado | Comportamento |
 |---|---|
-| Carregando | Esqueleto das colunas e dos cards |
+| Carregando | Navegação com transição do Next; **esqueleto (skeleton) pendente** — registrado como melhoria no `tasks.md` |
 | Vazio (sem leads) | Colunas vazias com o "+"; mensagem "Nenhum lead ainda. Use + para cadastrar." |
-| Busca/filtro sem resultado | "Nenhum lead encontrado para os filtros atuais" + "Limpar filtros" |
+| Busca/filtro sem resultado | "Nenhum lead encontrado para os filtros atuais"; "Limpar filtros" fica no popover de Filtros |
 | Erro ao mover | O card volta para a coluna original e aparece um aviso de erro |
 | Sucesso | Aviso curto ("Lead cadastrado", "Anotação adicionada"…) |
 | Sem permissão | Botões de ação ocultos; cards de outros responsáveis não são arrastáveis para o `sales` |
@@ -193,3 +195,5 @@ o status pode ser alterado no formulário de edição, os campos têm rótulos e
 - Especificação da seção **Clientes** e do que acontece ao **converter** um lead (Entrega 04).
 - Confirmar se o `sales` deve poder anotar e anexar em leads de **outros** responsáveis (hoje: não, conforme o ADR-003).
 - Confirmar se anotações devem poder ser editadas ou excluídas (hoje: histórico imutável).
+- Confirmar se um lead **arquivado** pode continuar recebendo edições, anotações e anexos (hoje: sim; só mover no kanban é bloqueado).
+- Confirmar se o `viewer` deve ver anotações e baixar anexos de todos os leads (hoje: sim, conforme §6).

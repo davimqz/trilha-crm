@@ -9,7 +9,7 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 ├── docker/postgres/init/        SQL executado na 1ª subida do Postgres (cria banco de teste)
 ├── docker-compose.yml           Postgres local (127.0.0.1:5432)
 ├── docs/                        architecture, decisions (ADRs), security, este mapa
-├── drizzle/                     Migrations SQL geradas (0000_auth: tabelas de auth)
+├── drizzle/                     Migrations SQL (0000_auth, 0001_leads)
 ├── e2e/                         Testes Playwright (setup global faz seed e login por papel)
 ├── drizzle.config.ts            Config do drizzle-kit
 ├── next.config.ts               Headers de segurança (CSP etc.)
@@ -19,12 +19,14 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 │   ├── app/                     Rotas Next.js (App Router)
 │   │   ├── (auth)/login/        Tela de login (pública)
 │   │   ├── (app)/               Área autenticada: layout com menu por papel e página inicial
+│   │   │   ├── leads/             Kanban de leads (estado na URL: q, owner, period, sort, view, lead, tab)
 │   │   │   ├── account/password/  Troca da própria senha
 │   │   │   └── settings/users/    Gestão de usuários (admin)
 │   │   ├── api/auth/[...all]/   Better Auth atrás da allowlist
+│   │   ├── api/leads/[leadId]/attachments/  POST upload · GET [attachmentId] download
 │   │   ├── api/health/route.ts  GET /api/health → 200 ok | 503 error
 │   │   └── layout.tsx           Layout raiz (pt-BR)
-│   ├── components/              ui/ (shadcn), form/ (select nativo, feedback), access-denied
+│   ├── components/              ui/ (shadcn), form/ (select nativo, option-select, feedback), confirm-dialog, access-denied
 │   ├── core/                    Infraestrutura compartilhada (não depende de módulos)
 │   │   ├── actions/             runAction (erros seguros) e estado de formulário
 │   │   ├── auth/                Better Auth: config, schema, allowlist, DAL de sessão, client
@@ -34,10 +36,12 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 │   │   ├── health/              checkDatabase
 │   │   ├── modules/             Tipos do manifesto, validação, índice de permissões
 │   │   └── rbac/                Papéis (roles.ts) e createAuthorization (can/requirePermission)
-│   ├── lib/utils.ts             cn() do shadcn
+│   ├── lib/                     utils.ts (cn), format.ts (datas em America/Sao_Paulo)
 │   └── modules/                 Módulos de negócio
 │       ├── authorization.ts     can/requirePermission ligados ao registry
 │       ├── registry.ts          Lista de manifestos registrados
+│       ├── leads/               Leads: constants, schema, validators, phone, rich-text, file-types, service,
+│       │                        actions, http (anexos), components/ (board, card, toolbar, sheet, editor…), __tests__/
 │       └── users/               Gestão de usuários (manifesto, validators, service, actions, UI, testes)
 ├── test/                        Setup de testes (migrations, stub server-only) e helpers de auth
 ├── tasks.md                     Entregas, tasks, status (fonte de verdade)
@@ -61,10 +65,13 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 - `src/core/modules/permissions.ts` e `validate-modules.ts`: base do RBAC.
 - `src/core/auth/create-auth.ts` e `allowed-routes.ts`: superfície de autenticação.
 - `src/modules/users/service.ts`: gestão de acesso (locks e revalidação do ator).
+- `src/modules/leads/service.ts`: posse e permissões dos leads; `leads/http.ts`: upload/download de anexos.
+- `src/modules/leads/rich-text.ts` + `components/rich-text-view.tsx`: fronteira contra XSS nas anotações.
 - `next.config.ts`: política de segurança de conteúdo.
 
 ## Módulos
 
 | Módulo | Pasta | Tabelas | Rotas | Status |
 |---|---|---|---|---|
+| leads | `src/modules/leads` | `leads`, `lead_notes`, `lead_attachments`, `lead_attachment_contents` | `/leads`, `/api/leads/…/attachments` | 🟢 Entrega 03 |
 | users | `src/modules/users` | `users`, `accounts`, `sessions` (em `core/auth/schema.ts`) | `/settings/users` | 🟢 Entrega 02 |

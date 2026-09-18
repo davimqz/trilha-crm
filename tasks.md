@@ -17,7 +17,7 @@
 | 00 | Definição (stack, arquitetura, roles, roadmap) | 🟢 |
 | 01 | Foundation | 🟢 |
 | 02 | Autenticação + RBAC + gestão de usuários | 🟢 |
-| 03 | Módulo Leads (kanban, anotações, anexos) | 🔵 |
+| 03 | Módulo Leads (kanban, anotações, anexos) | 🟢 (PR aberto) |
 | 04 | Módulo Clientes (+ conversão lead → cliente) | 🟡 aguardando especificação do dono do produto |
 | 05 | Hardening + Deploy do MVP | ⚪ |
 
@@ -230,38 +230,38 @@ edição/exclusão de anotações.
 
 ### Development
 
-- [ ] Schema: `leads`, `lead_notes`, `lead_attachments`, `lead_attachment_contents` + migration
-- [ ] Validators: lead, telefone BR, filtros, rich text (JSON), arquivos
-- [ ] Service: listar (busca/filtros/ordenação/arquivados), obter, criar, editar, mover, arquivar, excluir,
+- [x] Schema: `leads`, `lead_notes`, `lead_attachments`, `lead_attachment_contents` + migration
+- [x] Validators: lead, telefone BR, filtros, rich text (JSON), arquivos
+- [x] Service: listar (busca/filtros/ordenação/arquivados), obter, criar, editar, mover, arquivar, excluir,
       reatribuir, anotações, anexos (com posse do `sales`)
-- [ ] Route handlers de upload/download de anexos
-- [ ] Componentes shadcn: dialog, sheet, tabs, dropdown-menu, alert-dialog, textarea, skeleton, sonner, tooltip, toggle
-- [ ] UI: toolbar (busca, filtros, ordenar, abas), kanban com dnd-kit, "+" por coluna, painel com abas
-- [ ] Editor e renderizador de anotações (Tiptap)
-- [ ] Menu "Leads" (manifesto do módulo)
+- [x] Route handlers de upload/download de anexos
+- [x] Componentes shadcn: dialog, sheet, tabs, dropdown-menu, alert-dialog, skeleton, sonner, tooltip, toggle, popover, separator
+- [x] UI: toolbar (busca, filtros, ordenar, abas), kanban com dnd-kit, "+" por coluna, painel com abas
+- [x] Editor e renderizador de anotações (Tiptap)
+- [x] Menu "Leads" (manifesto do módulo)
 
 ### QA
 
-- [ ] Unit (telefone, validators, rich text, tipos de arquivo)
-- [ ] Integração (service + matriz de permissões + IDOR)
-- [ ] E2E (fluxos da §8 da spec)
+- [x] Unit (telefone, validators, rich text, tipos de arquivo)
+- [x] Integração (service + matriz de permissões + IDOR)
+- [x] E2E (fluxos da §8 da spec)
 
 ### Security
 
-- [ ] Security review do diff
-- [ ] Pentest (XSS em anotação, upload malicioso, IDOR, mass assignment)
+- [x] Security review do diff
+- [x] Pentest (XSS em anotação, upload malicioso, IDOR, mass assignment)
 
 ### Git
 
 - [x] Branch `feature/leads`
-- [ ] Commits atômicos
-- [ ] PR para `main`
+- [x] Commits atômicos
+- [x] PR para `main`
 
 ### Definition of Done
 
-- [ ] Critérios de aceitação 1–13 verificados
+- [x] Critérios de aceitação 1–13 verificados
 - [ ] CI verde (lint, typecheck, unit, integração, build, E2E)
-- [ ] Docs atualizadas (spec, architecture, repository-map, security)
+- [x] Docs atualizadas (spec, architecture, repository-map, security)
 
 # Entrega 04 — Clientes 🟡
 
@@ -284,6 +284,10 @@ Aguardando especificação (campos, relação com lead, conversão).
 | TECH DEBT | Alerta moderado GHSA-67mh no `esbuild` transitivo do `drizzle-kit` (dev-only) | Entrega 01 |
 | ~~TECH DEBT~~ | ~~Configurar Playwright~~ — feito na Entrega 02 | Entrega 01 |
 | IMPROVEMENT | Lint de fronteiras entre módulos (proibir import de internals de outro módulo) | Entrega 01 |
+| IMPROVEMENT | Estados de carregamento (skeleton) no kanban e no painel do lead (`loading.tsx`) | Entrega 03 |
+| IMPROVEMENT | Arraste por teclado move por pixels; mover entre colunas com as setas exige sensor customizado (hoje o status também muda em "Editar") | Entrega 03 |
+| TECH DEBT | Extrair a interface `AttachmentStorage` (ADR-006) quando houver 2º backend de arquivos; hoje o service grava direto no Postgres | Entrega 03 |
+| FEATURE | Regras pendentes do dono do produto: editar/excluir anotações, alterar lead arquivado, visibilidade do viewer (spec §12) | Entrega 03 |
 | SECURITY | **Limite de tentativas de login por conta** (independente de IP) + `trustedProxies` conforme hospedagem: o rate limit por IP pode ser contornado com `X-Forwarded-For` forjado se o servidor ficar exposto sem proxy | Entrega 02 → **obrigatório na Entrega 05** |
 | FEATURE | Recuperação de senha por e-mail | Entrega 02 (depende da integração de e-mail) |
 
