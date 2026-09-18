@@ -167,7 +167,11 @@ Leads precisam de anexos (PDF, DOC, planilhas, imagens). A hospedagem ainda não
 - Acesso concentrado no service do módulo (`addAttachment`, `getAttachmentFile`, `removeAttachment`). Uma interface
   `AttachmentStorage` será extraída quando existir um segundo backend (tech debt registrado).
 - Limites: 10 MB por arquivo, 20 anexos por lead, tipos em lista permitida, validados pelo **conteúdo**.
-- Download por route handler autenticado, sempre como `attachment` e com `nosniff` + `CSP: sandbox`.
+- Download por route handler autenticado, sempre como `attachment` e com `nosniff` + `CSP: sandbox` + `X-Frame-Options: DENY`.
+- Pré-visualização (`/preview`) só para PDF, PNG/JPG e TXT/CSV: `inline`, `X-Frame-Options: SAMEORIGIN` e
+  `CSP frame-ancestors 'self'` (exibível só dentro do CRM). Imagem e texto com `sandbox`; texto sempre `text/plain`.
+  PDF sem `sandbox`, porque o visualizador de PDF do Chrome não abre sob CSP sandbox.
+  DOC/DOCX/XLS/XLSX não têm pré-visualização: exigiria serviço externo de terceiros (exposição de dados).
 
 ### Alternativas
 

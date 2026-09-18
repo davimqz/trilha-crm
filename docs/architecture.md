@@ -63,7 +63,9 @@ Page (RSC) ──requireActor() + can()──▶ service.ts
   Use subconsulta correlacionada para nomes de usuário.
 - **Formulários com Server Actions:** o React 19 reseta o form após a action; devolva os valores com
   `withSubmittedValues` e remonte o form com `key` (inputs do Base UI não aceitam troca de `defaultValue`).
-- **Headers do `next.config.ts` sobrescrevem os do route handler** (ex.: CSP do download).
+- **Headers do `next.config.ts` sobrescrevem os do route handler** (ex.: CSP do download). E o `source` não aceita
+  grupos de captura `( )?`: use lookaheads negativos encadeados (o servidor nem sobe se a regex for inválida).
+- **Iframe com PDF captura o teclado:** Esc não fecha o diálogo enquanto o foco está no visualizador (use o ✕).
 - **Ordenação por texto:** use a collation ICU `"und-x-icu"` (a imagem Alpine do Postgres não tem locales).
 
 ## Banco de dados

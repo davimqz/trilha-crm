@@ -57,7 +57,7 @@ export type LeadAttachment = {
   createdAt: Date;
 };
 
-export type AttachmentFile = { fileName: string; mimeType: string; data: Buffer };
+export type AttachmentFile = { fileName: string; kind: AttachmentKind; mimeType: string; data: Buffer };
 
 export type AssignableUser = { id: string; name: string };
 
@@ -393,12 +393,17 @@ export function createLeadsService({ db }: { db: Database }) {
 
       // leadId + attachmentId juntos: impede baixar anexo de outro lead trocando só um dos ids
       const [row] = await db
-        .select({ fileName: leadAttachments.fileName, mimeType: leadAttachments.mimeType, data: leadAttachmentContents.data })
+        .select({
+          fileName: leadAttachments.fileName,
+          kind: leadAttachments.kind,
+          mimeType: leadAttachments.mimeType,
+          data: leadAttachmentContents.data,
+        })
         .from(leadAttachments)
         .innerJoin(leadAttachmentContents, eq(leadAttachmentContents.attachmentId, leadAttachments.id))
         .where(and(eq(leadAttachments.id, attachmentId), eq(leadAttachments.leadId, leadId)));
       if (!row) throw new NotFoundError("Anexo não encontrado.");
-      return row;
+      return { ...row, kind: row.kind as AttachmentKind };
     },
 
     async removeAttachment(actor: Actor, input: unknown): Promise<void> {

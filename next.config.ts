@@ -18,7 +18,6 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const securityHeaders = [
-  { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
@@ -30,11 +29,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/(.*)", headers: securityHeaders },
-      // Headers do next.config sobrescrevem os do route handler: a CSP global não pode cair no download,
-      // que precisa de "sandbox" (ADR-006). Por isso a rota de download fica fora dela e tem regra própria.
+      // Headers do next.config sobrescrevem os do route handler. As rotas de anexo ficam fora da CSP global:
+      // o download tem regra própria abaixo (sandbox) e a pré-visualização define CSP/X-Frame-Options no handler
+      // (variam por tipo de arquivo e a pré-visualização precisa poder ser exibida dentro do próprio CRM).
       {
-        source: "/((?!api/leads/[^/]+/attachments/[^/]+$).*)",
+        source: "/((?!api/leads/[^/]+/attachments/[^/]+$)(?!api/leads/[^/]+/attachments/[^/]+/preview$).*)",
         headers: [{ key: "Content-Security-Policy", value: contentSecurityPolicy }],
+      },
+      {
+        source: "/((?!api/leads/[^/]+/attachments/[^/]+/preview$).*)",
+        headers: [{ key: "X-Frame-Options", value: "DENY" }],
       },
       {
         source: "/api/leads/:leadId/attachments/:attachmentId",

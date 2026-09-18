@@ -5,7 +5,7 @@ import { requireActor } from "@/core/auth/session";
 import { NotFoundError } from "@/core/errors";
 import { can } from "@/modules/authorization";
 import { ArchivedLeadsTable } from "@/modules/leads/components/archived-leads-table";
-import { LeadSheet, type SelectedLead } from "@/modules/leads/components/lead-sheet";
+import { LeadDialog, type SelectedLead } from "@/modules/leads/components/lead-dialog";
 import { LeadsBoard } from "@/modules/leads/components/leads-board";
 import { LeadsToolbar } from "@/modules/leads/components/leads-toolbar";
 import { LEAD_TABS, type LeadTab } from "@/modules/leads/constants";
@@ -70,7 +70,7 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
         <LeadsBoard leads={leads} canCreate={can(actor, "leads:create")} filtered={filtered} />
       )}
 
-      <LeadSheet selected={selected} tab={tab} users={users} />
+      <LeadDialog selected={selected} tab={tab} users={users} />
     </section>
   );
 }
