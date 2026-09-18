@@ -22,6 +22,10 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   not_converted: "Não convertido",
 };
 
+// Abas do painel do lead (valor do parâmetro ?tab= na URL)
+export const LEAD_TABS = ["info", "edit", "notes", "attachments"] as const;
+export type LeadTab = (typeof LEAD_TABS)[number];
+
 export const LEAD_SORTS = ["updated_desc", "created_desc", "created_asc", "name_asc", "name_desc"] as const;
 export type LeadSort = (typeof LEAD_SORTS)[number];
 
@@ -60,7 +64,7 @@ export const NOTE_COLORS = [
   { label: "Rosa", value: "#db2777" },
 ] as const;
 
-export const NOTE_COLOR_VALUES = NOTE_COLORS.flatMap((color) => (color.value ? [color.value] : []));
+export const NOTE_COLOR_VALUES: readonly string[] = NOTE_COLORS.flatMap((color) => (color.value ? [color.value] : []));
 
 export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 export const ATTACHMENTS_PER_LEAD_MAX = 20;
