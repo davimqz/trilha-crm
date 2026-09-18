@@ -96,7 +96,8 @@ Security review do diff completo da branch: nenhuma vulnerabilidade de alta conf
 | Anotações em JSON validado por schema estrito; renderização sem `dangerouslySetInnerHTML`; cor só da paleta | `leads/rich-text.ts`, `rich-text-view.tsx` |
 | Anexos: tipo confirmado pelo conteúdo (assinatura) + extensão; 10 MB; 20 por lead; nome higienizado | `leads/file-types.ts`, `leads/service.ts` |
 | Upload: mesma origem (`Origin` + `Sec-Fetch-Site`), sessão, `Content-Length` checado antes de ler o corpo | `leads/http.ts` |
-| Download: `attachment`, MIME da allowlist, `nosniff`, CSP `default-src 'none'; sandbox`, `no-store` | `leads/http.ts`, `next.config.ts` |
+| Download: `attachment`, MIME da allowlist, `nosniff`, CSP `default-src 'none'; sandbox`, `X-Frame-Options: DENY`, `no-store` | `leads/http.ts`, `next.config.ts` |
+| Pré-visualização: só PDF/imagem/texto; `inline`; `X-Frame-Options: SAMEORIGIN` + `frame-ancestors 'self'`; `sandbox` em imagem/texto; texto sempre `text/plain`; Office recusado (415) | `leads/http.ts`, `next.config.ts` |
 | Busca com `%`/`_` literais; ordenação/período por enum | `leads/service.ts` |
 | Parâmetros da URL validados com fallback seguro | `app/(app)/leads/page.tsx` |
 
@@ -116,6 +117,8 @@ Automatizado (`src/modules/leads/__tests__/`, `e2e/leads.spec.ts`):
 | Upload sem sessão (401), de outra origem (403), acima do limite (413) | ✅ |
 | Download sem sessão (401); anexo pedido por outro lead (404); headers seguros | ✅ |
 | Busca com `%` e `_` | ✅ tratados como texto |
+| Pré-visualização: sem sessão (401), headers (`inline`, `SAMEORIGIN`, `frame-ancestors 'self'`, `nosniff`), CSV com HTML servido como `text/plain` + `sandbox`, DOCX → 415 | ✅ |
+| Páginas do app continuam com CSP global e `X-Frame-Options: DENY` após as regras por rota | ✅ |
 | Exclusão em cascata (anotações, anexos, conteúdos) | ✅ |
 
 Achados corrigidos durante a entrega:

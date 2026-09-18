@@ -83,7 +83,8 @@ o arraste só começa depois de o ponteiro andar alguns pixels, então um clique
 
 ## 4. Painel do lead (ao clicar no card)
 
-Painel lateral (Sheet) com **abas**:
+**Modal centralizado** na tela (pedido do dono do produto; antes era um painel lateral), com cabeçalho fixo
+(nome, status, responsável) e **abas** cujo conteúdo rola dentro do modal:
 
 ### 4.1 Informações
 Nome, e-mail, telefone, status, responsável, criado em/por, **última edição (data e hora) e por quem**, e "Arquivado" quando for o caso.
@@ -107,7 +108,16 @@ Nome, e-mail, telefone, status, responsável, criado em/por, **última edição 
 ### 4.4 Anexos
 - Botão **Adicionar** (seletor de arquivo).
 - Lista com: **Nome**, **Tipo** (PDF, DOC, DOCX, XLS, XLSX, PNG, JPG, TXT, CSV), **Tamanho** (KB/MB), **Data do anexo**
-  e botão **Remover** (com confirmação). Clicar no nome baixa o arquivo.
+  e as ações:
+  - **Visualizar** — abre uma pré-visualização dentro do CRM (sobre o modal do lead), com "Abrir em nova aba" e "Baixar":
+    - **PDF:** visualizador do navegador (páginas, zoom, impressão);
+    - **PNG/JPG:** a imagem;
+    - **TXT/CSV:** o texto (sempre como texto puro; HTML no arquivo aparece como texto).
+    - **[Decisão]** **DOC/DOCX/XLS/XLSX não têm visualização**: o navegador não abre esses formatos e visualizá-los exigiria
+      enviar o arquivo a um serviço externo (Microsoft/Google), expondo dados dos leads. O botão aparece desabilitado com
+      a explicação; use **Baixar**.
+  - **Baixar** — download para o computador, com o nome original.
+  - **Remover** (com confirmação; só para quem pode editar o lead).
 - **[Decisão]** Limites: 10 MB por arquivo, até 20 anexos por lead. Tipos fora da lista são recusados.
 
 ## 5. Regras de dados
