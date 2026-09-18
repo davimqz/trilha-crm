@@ -16,25 +16,26 @@ import { createUserAction } from "../actions";
 export function CreateUserForm() {
   const [result, formAction, pending] = useActionState(createUserAction, IDLE);
   const errors = result.fieldErrors ?? {};
+  const values = result.values ?? {};
 
   return (
     // key: remonta o form (limpa os campos) a cada criação bem-sucedida
-    <form key={result.status === "success" ? result.message : "form"} action={formAction} className="grid gap-4" noValidate>
+    <form key={result.status === "success" ? result.message : JSON.stringify(values)} action={formAction} className="grid gap-4" noValidate>
       <FormFeedback result={result} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="new-user-name">Nome</Label>
-          <Input id="new-user-name" name="name" required maxLength={100} aria-invalid={!!errors.name} aria-describedby="new-user-name-error" />
+          <Input id="new-user-name" name="name" defaultValue={values.name} required maxLength={100} aria-invalid={!!errors.name} aria-describedby="new-user-name-error" />
           <FieldError id="new-user-name-error" message={errors.name} />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="new-user-email">E-mail</Label>
-          <Input id="new-user-email" name="email" type="email" required maxLength={254} autoComplete="off" aria-invalid={!!errors.email} aria-describedby="new-user-email-error" />
+          <Input id="new-user-email" name="email" type="email" defaultValue={values.email} required maxLength={254} autoComplete="off" aria-invalid={!!errors.email} aria-describedby="new-user-email-error" />
           <FieldError id="new-user-email-error" message={errors.email} />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="new-user-role">Papel</Label>
-          <NativeSelect id="new-user-role" name="role" defaultValue="sales" aria-invalid={!!errors.role} aria-describedby="new-user-role-error">
+          <NativeSelect id="new-user-role" name="role" defaultValue={values.role ?? "sales"} aria-invalid={!!errors.role} aria-describedby="new-user-role-error">
             {ROLES.map((role) => (
               <option key={role} value={role}>
                 {ROLE_LABELS[role]}

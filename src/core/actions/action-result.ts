@@ -28,6 +28,12 @@ export async function runAction(operation: () => Promise<string>): Promise<Actio
   }
 }
 
+// Nunca inclua senhas em `keys`: os valores voltam para o navegador
+export function withSubmittedValues(result: ActionResult, formData: FormData, keys: readonly string[]): ActionResult {
+  if (result.status !== "error") return result;
+  return { ...result, values: Object.fromEntries(keys.map((key) => [key, formString(formData, key)])) };
+}
+
 export function formString(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === "string" ? value : "";
