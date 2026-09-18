@@ -77,7 +77,7 @@ describe("users service", () => {
     it("rejeita campos extras (mass assignment) e senha curta", async () => {
       const admin = await bootstrap();
       const withExtra = { name: "X", email: "x@trilha.test", role: "viewer", password: TEST_PASSWORD, active: false };
-      await expect(usersService.createUser(admin, withExtra as never)).rejects.toThrow(ZodError);
+      await expect(usersService.createUser(admin, withExtra)).rejects.toThrow(ZodError);
       await expect(
         usersService.createUser(admin, { name: "Xx", email: "x@trilha.test", role: "viewer", password: "curta" }),
       ).rejects.toThrow(ZodError);

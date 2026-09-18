@@ -16,10 +16,7 @@ import {
   createUserSchema,
   resetPasswordSchema,
   setActiveSchema,
-  type ChangeRoleInput,
   type CreateUserInput,
-  type ResetPasswordInput,
-  type SetActiveInput,
 } from "./validators";
 
 // DTO: nunca inclui hash de senha nem dados de sessão
@@ -52,6 +49,7 @@ function toSummary(row: { id: string; name: string; email: string; role: string;
   return { ...row, role: isRole(row.role) ? row.role : "viewer" } satisfies UserSummary;
 }
 
+// Métodos recebem `input: unknown`: toda entrada é tratada como não confiável e validada com Zod aqui
 export function createUsersService({ db, auth }: UsersServiceDeps) {
   async function hashPassword(password: string) {
     const context = await auth.$context;
@@ -108,7 +106,7 @@ export function createUsersService({ db, auth }: UsersServiceDeps) {
       return rows.map(toSummary);
     },
 
-    async createUser(actor: Actor, input: CreateUserInput): Promise<UserSummary> {
+    async createUser(actor: Actor, input: unknown): Promise<UserSummary> {
       requirePermission(actor, "users:manage");
       const data = createUserSchema.parse(input);
       const passwordHash = await hashPassword(data.password);
@@ -123,7 +121,7 @@ export function createUsersService({ db, auth }: UsersServiceDeps) {
       }
     },
 
-    async changeRole(actor: Actor, input: ChangeRoleInput): Promise<void> {
+    async changeRole(actor: Actor, input: unknown): Promise<void> {
       requirePermission(actor, "users:manage");
       const data = changeRoleSchema.parse(input);
       if (data.userId === actor.userId) throw new DomainError("Você não pode alterar o próprio papel.");
@@ -134,7 +132,7 @@ export function createUsersService({ db, auth }: UsersServiceDeps) {
       });
     },
 
-    async setActive(actor: Actor, input: SetActiveInput): Promise<void> {
+    async setActive(actor: Actor, input: unknown): Promise<void> {
       requirePermission(actor, "users:manage");
       const data = setActiveSchema.parse(input);
       if (data.userId === actor.userId) throw new DomainError("Você não pode desativar a própria conta.");
@@ -147,7 +145,7 @@ export function createUsersService({ db, auth }: UsersServiceDeps) {
       });
     },
 
-    async resetPassword(actor: Actor, input: ResetPasswordInput): Promise<void> {
+    async resetPassword(actor: Actor, input: unknown): Promise<void> {
       requirePermission(actor, "users:manage");
       const data = resetPasswordSchema.parse(input);
       if (data.userId === actor.userId) {
