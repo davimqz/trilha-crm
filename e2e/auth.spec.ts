@@ -1,0 +1,38 @@
+import { expect, test } from "@playwright/test";
+
+import { E2E_PASSWORD, E2E_USERS } from "./fixtures";
+
+test.describe("autenticação", () => {
+  test("visitante sem sessão é levado ao login", async ({ page }) => {
+    for (const path of ["/", "/settings/users", "/account/password"]) {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/login$/);
+    }
+    await expect(page.getByRole("heading", { name: "Trilha CRM" })).toBeVisible();
+  });
+
+  test("login inválido mostra mensagem genérica", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("E-mail").fill(E2E_USERS.viewer.email);
+    await page.getByLabel("Senha").fill("senha-errada-123");
+    await page.getByRole("button", { name: "Entrar" }).click();
+
+    // filter: o anunciador de rotas do Next também usa role="alert"
+    await expect(page.getByRole("alert").filter({ hasText: "E-mail ou senha inválidos." })).toBeVisible();
+    await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test("login e logout", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("E-mail").fill(E2E_USERS.logout.email);
+    await page.getByLabel("Senha").fill(E2E_PASSWORD);
+    await page.getByRole("button", { name: "Entrar" }).click();
+    await expect(page.getByRole("heading", { name: `Olá, ${E2E_USERS.logout.name}` })).toBeVisible();
+
+    await page.getByRole("button", { name: "Sair" }).click();
+    await expect(page).toHaveURL(/\/login$/);
+
+    await page.goto("/");
+    await expect(page).toHaveURL(/\/login$/);
+  });
+});
