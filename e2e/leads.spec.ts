@@ -3,6 +3,12 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { ADMIN_LEAD, E2E_BASE_URL, storageStatePath } from "./fixtures";
 
 const PDF = Buffer.from("%PDF-1.7\nproposta e2e");
+// PNG 1x1 válido (para o navegador conseguir decodificar na pré-visualização)
+const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+  "base64",
+);
+const DOCX = Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.from("....word/document.xml....")]);
 
 async function createLead(page: Page, column: string, lead: { name: string; email: string; phone: string }) {
   await page.getByRole("button", { name: `Adicionar lead em ${column}` }).click();
@@ -159,7 +165,7 @@ test.describe("leads (admin)", () => {
     await expect(row).toContainText("PDF");
 
     const downloadPromise = page.waitForEvent("download");
-    await row.getByRole("link", { name: "Proposta.pdf" }).click();
+    await row.getByRole("link", { name: "Baixar Proposta.pdf" }).click();
     expect((await downloadPromise).suggestedFilename()).toBe("Proposta.pdf");
 
     await page.getByTestId("attachment-input").setInputFiles({ name: "falso.pdf", mimeType: "application/pdf", buffer: Buffer.from("<html>") });
@@ -189,6 +195,62 @@ test.describe("leads (admin)", () => {
     await expect(page.getByText("Lead excluído.")).toBeVisible();
     await page.goto("/leads");
     await expect(page.getByTestId("lead-card-joana@e2e.test")).toHaveCount(0);
+  });
+
+  test("card abre em modal centralizado", async ({ page }) => {
+    await page.goto("/leads");
+    await page.getByTestId(`lead-card-${ADMIN_LEAD.email}`).click();
+    const modal = page.getByTestId("lead-dialog");
+    await expect(modal).toBeVisible();
+    const box = (await modal.boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThan(4);
+    expect(Math.abs(box.y + box.height / 2 - viewport.height / 2)).toBeLessThan(4);
+  });
+
+  test("anexos: visualizar PDF, imagem e texto; Word só baixar", async ({ page }) => {
+    await page.goto("/leads");
+    await createLead(page, "Prospect", { name: "Olga Anexos", email: "olga@e2e.test", phone: "11900001111" });
+    await openLead(page, "Olga Anexos");
+    await page.getByRole("tab", { name: /Anexos/ }).click();
+
+    const input = page.getByTestId("attachment-input");
+    await input.setInputFiles({ name: "contrato.pdf", mimeType: "application/pdf", buffer: PDF });
+    await expect(page.getByTestId("attachment-row")).toHaveCount(1);
+    await input.setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
+    await expect(page.getByTestId("attachment-row")).toHaveCount(2);
+    await input.setInputFiles({ name: "notas.txt", mimeType: "text/plain", buffer: Buffer.from("linha 1\n<b>não é HTML</b>") });
+    await expect(page.getByTestId("attachment-row")).toHaveCount(3);
+    await input.setInputFiles({ name: "proposta.docx", mimeType: "application/octet-stream", buffer: DOCX });
+    await expect(page.getByTestId("attachment-row")).toHaveCount(4);
+
+    const preview = page.getByTestId("attachment-preview");
+    const close = () => preview.getByRole("button", { name: "Fechar" }).click();
+
+    await page.getByRole("button", { name: "Visualizar contrato.pdf" }).click();
+    await expect(preview.locator("iframe")).toHaveAttribute("src", /\/preview$/);
+    await expect(preview.getByRole("link", { name: "Baixar" })).toBeVisible();
+    await close();
+
+    await page.getByRole("button", { name: "Visualizar foto.png" }).click();
+    const image = preview.getByRole("img", { name: "foto.png" });
+    await expect(image).toBeVisible();
+    await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(1);
+    await close();
+
+    await page.getByRole("button", { name: "Visualizar notas.txt" }).click();
+    await expect(preview.locator("pre")).toContainText("<b>não é HTML</b>");
+    await expect(preview.locator("pre b")).toHaveCount(0);
+    await close();
+
+    // Word/Excel: sem visualização (exigiria serviço externo), só baixar
+    await expect(page.getByRole("button", { name: "Visualização indisponível para DOCX" })).toBeDisabled();
+    const download = page.waitForEvent("download");
+    await page.getByRole("link", { name: "Baixar proposta.docx" }).click();
+    expect((await download).suggestedFilename()).toBe("proposta.docx");
+
+    // O modal do lead continua aberto depois de fechar a pré-visualização
+    await expect(page.getByTestId("lead-dialog")).toBeVisible();
   });
 
   test("XSS: HTML digitado na anotação é exibido como texto", async ({ page }) => {
@@ -298,6 +360,39 @@ test.describe("pentest: endpoints de anexos e Server Actions", () => {
     expect(download.headers()["x-content-type-options"]).toBe("nosniff");
     expect(download.headers()["content-security-policy"]).toContain("sandbox");
     expect(download.headers()["content-type"]).toBe("application/pdf");
+
+    // Pré-visualização: inline, só dentro do próprio CRM, sem cache
+    const preview = await viewerContext.request.get(`${downloadUrl}/preview`);
+    expect(preview.status()).toBe(200);
+    expect(preview.headers()["content-disposition"]).toMatch(/^inline;/);
+    expect(preview.headers()["x-frame-options"]).toBe("SAMEORIGIN");
+    expect(preview.headers()["content-security-policy"]).toContain("frame-ancestors 'self'");
+    expect(preview.headers()["x-content-type-options"]).toBe("nosniff");
+    expect((await anonymous.get(`${downloadUrl}/preview`)).status()).toBe(401);
+    // Download continua sem poder ser embutido
+    expect(download.headers()["x-frame-options"]).toBe("DENY");
+    // Páginas do app mantêm a CSP global e o bloqueio de iframe
+    const appPage = await viewerContext.request.get("/leads");
+    expect(appPage.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
+    expect(appPage.headers()["x-frame-options"]).toBe("DENY");
+
+    // Texto sempre servido como text/plain na pré-visualização (nunca HTML)
+    const csv = await admin.post(uploadUrl, {
+      headers: { origin: E2E_BASE_URL },
+      multipart: { file: { name: "x.csv", mimeType: "text/html", buffer: Buffer.from("<script>alert(1)</script>") } },
+    });
+    const { id: csvId } = (await csv.json()) as { id: string };
+    const csvPreview = await viewerContext.request.get(`${uploadUrl}/${csvId}/preview`);
+    expect(csvPreview.headers()["content-type"]).toMatch(/^text\/plain/);
+    expect(csvPreview.headers()["content-security-policy"]).toContain("sandbox");
+
+    // Word não tem pré-visualização
+    const docx = await admin.post(uploadUrl, {
+      headers: { origin: E2E_BASE_URL },
+      multipart: { file: { name: "a.docx", mimeType: "application/octet-stream", buffer: DOCX } },
+    });
+    const { id: docxId } = (await docx.json()) as { id: string };
+    expect((await viewerContext.request.get(`${uploadUrl}/${docxId}/preview`)).status()).toBe(415);
 
     // IDOR: anexo existente, mas pedido por outro lead
     expect((await viewerContext.request.get(`/api/leads/00000000-0000-4000-8000-000000000000/attachments/${attachmentId}`)).status()).toBe(404);
