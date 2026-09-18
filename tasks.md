@@ -99,7 +99,7 @@ Autenticação, telas de negócio, deploy.
 
 - [x] `pnpm dev` sobe com Postgres local
 - [x] `pnpm lint`, `pnpm typecheck`, `pnpm test` passam
-- [ ] CI verde
+- [x] CI verde
 - [x] Documentação atualizada
 - [x] Security review realizado
 
