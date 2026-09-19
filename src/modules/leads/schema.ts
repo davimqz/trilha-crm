@@ -106,7 +106,11 @@ export const leadEvents = pgTable(
     actorId: uuid("actor_id")
       .notNull()
       .references(() => users.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // clock_timestamp() e não now(): now() é o início da transação, e vários eventos da mesma transação
+    // (ex.: "movido para Convertido" + "convertido em cliente") ficariam com o mesmo horário e ordem indefinida
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .default(sql`clock_timestamp()`),
   },
   (table) => [
     check("lead_events_type_check", sql`${table.type} in (${eventTypeList})`),
