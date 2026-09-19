@@ -3,6 +3,7 @@
 import {
   BuildingIcon,
   ChevronsUpDownIcon,
+  HandshakeIcon,
   HouseIcon,
   KanbanSquareIcon,
   KeyRoundIcon,
@@ -46,6 +47,7 @@ const ICONS: Record<NavIcon, LucideIcon> = {
   users: UsersIcon,
   building: BuildingIcon,
   settings: SettingsIcon,
+  handshake: HandshakeIcon,
 };
 
 export type SidebarNavItem = { label: string; href: string; icon?: NavIcon };

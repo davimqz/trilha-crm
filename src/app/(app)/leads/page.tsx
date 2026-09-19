@@ -10,6 +10,7 @@ import { LeadsBoard } from "@/modules/leads/components/leads-board";
 import { LeadsToolbar } from "@/modules/leads/components/leads-toolbar";
 import { LEAD_TABS, type LeadTab } from "@/modules/leads/constants";
 import { getLeadsService } from "@/modules/leads/service";
+import { buildTimeline } from "@/modules/leads/timeline";
 import { listLeadsSchema } from "@/modules/leads/validators";
 
 export const metadata: Metadata = { title: "Leads · Trilha CRM" };
@@ -39,12 +40,13 @@ export default async function LeadsPage({ searchParams }: PageProps<"/leads">) {
   const leadId = first(params.lead);
   if (leadId) {
     try {
-      const [lead, notes, attachments] = await Promise.all([
+      const [lead, notes, attachments, events] = await Promise.all([
         service.getLead(actor, { leadId }),
         service.listNotes(actor, { leadId }),
         service.listAttachments(actor, { leadId }),
+        service.listEvents(actor, { leadId }),
       ]);
-      selected = { lead, notes, attachments };
+      selected = { lead, notes, attachments, timeline: buildTimeline({ events, notes, attachments }) };
     } catch (error) {
       // Lead inexistente/excluído ou id inválido na URL: só não abre o painel
       if (!(error instanceof NotFoundError) && !(error instanceof Error && error.name === "ZodError")) throw error;

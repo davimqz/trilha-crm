@@ -129,6 +129,34 @@ Validação por mutação: desligar a checagem de posse faz os testes de IDOR fa
 
 Security review do diff completo da branch: nenhuma vulnerabilidade de alta confiança.
 
+## Controles atuais (Entrega 04 — Clientes)
+
+| Controle | Onde |
+|---|---|
+| Não existe criação manual de cliente: só `syncClientForStatusChange`, dentro da transação de status do lead (já autorizada) | `clients/sync.ts`, `leads/service.ts` |
+| Edição de cliente: `clients:update` + posse pelo responsável do lead lido do banco, com lock das linhas; reatribuir exige `clients:assign` | `clients/service.ts` |
+| Atendimentos: `clients:log-service` (sem viewer), cliente arquivado bloqueado, responsável ativo, data não futura | `clients/service.ts`, `clients/validators.ts` |
+| Descrição do atendimento: mesmo schema/renderizador seguro das anotações (ADR-007) | `clients/validators.ts` |
+| Linha do tempo com eventos gravados na transação da ação (`clock_timestamp()` para ordem correta) | `leads/events.ts`, `drizzle/0003_*` |
+| Excluir lead convertido bloqueado (FK sem cascade + regra no service) | `leads/service.ts`, `clients/schema.ts` |
+| Lead arquivado não muda de status por nenhum caminho (kanban ou formulário) | `leads/service.ts` |
+
+## Pentest — Entrega 04
+
+| Teste | Resultado |
+|---|---|
+| Criar cliente sem conversão (não há action/rota; mass assignment de `leadId`/`archivedAt`) | ✅ impossível / ZodError |
+| Sales editando cliente de outro responsável; viewer editando | ✅ ForbiddenError |
+| Reatribuir sem `clients:assign` | ✅ ForbiddenError |
+| Atendimento: viewer, data futura, tipo inválido, responsável inativo, cliente arquivado | ✅ recusado |
+| XSS na descrição do atendimento (nós HTML, `style`/`onclick`) | ✅ recusado/limpo |
+| Excluir lead convertido (mesmo como admin) | ✅ bloqueado, nada apagado |
+| Conversão/reversão/reativação consistentes (mesmo cliente, histórico intacto) | ✅ |
+| Lead arquivado convertendo pelo formulário (achado da security review) | ✅ corrigido: bloqueado |
+
+Validação por mutação: remover a checagem de posse do cliente ou a sincronização lead → cliente faz os testes falharem.
+Security review do diff: nenhuma vulnerabilidade de alta confiança.
+
 ## Roadmap de segurança
 
 - Entrega 05: limite de tentativas de login por conta (independente de IP) e `trustedProxies` conforme a hospedagem.

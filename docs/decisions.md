@@ -200,3 +200,30 @@ Leads precisam de anexos (PDF, DOC, planilhas, imagens). A hospedagem ainda não
 
 - Não há como injetar HTML/estilos arbitrários: XSS armazenado fica estruturalmente impossível nesse campo.
 - Novos recursos de formatação exigem atualizar schema e renderizador juntos (com teste).
+
+---
+
+## ADR-008 — Clientes como extensão de Leads + registro de eventos
+
+**Status:** Aceita (2026-09-19)
+
+### Contexto
+
+Cliente não é cadastrado manualmente: nasce da conversão de um lead e compartilha dados, anotações e anexos com ele.
+O dono do produto pediu uma linha do tempo com todo o histórico (quando virou lead, cada mudança de coluna, com dia e hora).
+
+### Decisão
+
+- **Uma pessoa, dois papéis:** a tabela `clients` referencia o lead (`lead_id` único). Nome, e-mail, telefone e responsável
+  ficam só no lead (fonte única); o cliente guarda status associativo, datas de conversão e arquivamento.
+- **Dependência explícita entre módulos (exceção ao ADR-002):** `clients` é extensão de `leads` e pode ler/escrever as tabelas
+  de leads dentro das regras de permissão de leads. `leads` chama `syncClientForStatusChange` (de `clients`) **na mesma transação**
+  da mudança de status. A composição da linha do tempo acontece na camada de página (dados de cada módulo + função pura).
+- **Registro de eventos:** tabela `lead_events` (tipo, valor anterior, valor novo, autor, data) gravada na mesma transação de cada
+  ação. Anotações, anexos e atendimentos entram na linha do tempo a partir das próprias tabelas (sem duplicar).
+- Migração faz backfill: evento "created" para leads existentes e clientes para leads já convertidos.
+
+### Consequências
+
+- Histórico auditável daqui para frente (também serve de base para o "log de auditoria" do roadmap).
+- Excluir lead convertido é bloqueado (a exclusão apagaria o cliente em cascata).

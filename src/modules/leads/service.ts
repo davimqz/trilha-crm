@@ -4,15 +4,24 @@ import { and, asc, count, desc, eq, gte, ilike, isNotNull, isNull, sql, type Any
 
 import { users } from "@/core/auth/schema";
 import { getDb } from "@/core/db";
-import type { Database } from "@/core/db/create-database";
+import type { Database, Transaction } from "@/core/db/create-database";
 import { ConflictError, DomainError, NotFoundError, isUniqueViolation } from "@/core/errors";
 import { ForbiddenError, type Actor } from "@/core/rbac/authorization";
 import { can, requirePermission } from "@/modules/authorization";
+import { clients } from "@/modules/clients/schema";
+import { syncClientForStatusChange } from "@/modules/clients/sync";
 
-import { ATTACHMENT_MAX_BYTES, ATTACHMENTS_PER_LEAD_MAX, type LeadSort, type LeadStatus } from "./constants";
+import {
+  ATTACHMENT_MAX_BYTES,
+  ATTACHMENTS_PER_LEAD_MAX,
+  type LeadEventType,
+  type LeadSort,
+  type LeadStatus,
+} from "./constants";
+import { recordLeadEvents, type LeadEventInput } from "./events";
 import { ATTACHMENT_KINDS, detectAttachmentKind, sanitizeFileName, type AttachmentKind } from "./file-types";
 import type { RichTextDoc } from "./rich-text";
-import { leadAttachmentContents, leadAttachments, leadNotes, leads } from "./schema";
+import { leadAttachmentContents, leadAttachments, leadEvents, leadNotes, leads } from "./schema";
 import {
   addNoteSchema,
   attachmentRefSchema,
@@ -61,7 +70,14 @@ export type AttachmentFile = { fileName: string; kind: AttachmentKind; mimeType:
 
 export type AssignableUser = { id: string; name: string };
 
-type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+export type LeadEvent = {
+  id: string;
+  type: LeadEventType;
+  fromValue: string | null;
+  toValue: string | null;
+  actorName: string;
+  createdAt: Date;
+};
 
 const PERIOD_DAYS = { "7d": 7, "30d": 30, "90d": 90 } as const;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -126,12 +142,29 @@ export function createLeadsService({ db }: { db: Database }) {
   // Trava a linha do lead e confere a posse. Retorna o lead travado.
   async function lockLead(tx: Transaction, leadId: string) {
     const [lead] = await tx
-      .select({ id: leads.id, ownerId: leads.ownerId, archivedAt: leads.archivedAt })
+      .select({
+        id: leads.id,
+        ownerId: leads.ownerId,
+        archivedAt: leads.archivedAt,
+        status: leads.status,
+        name: leads.name,
+        email: leads.email,
+        phone: leads.phone,
+      })
       .from(leads)
       .where(eq(leads.id, leadId))
       .for("update");
     if (!lead) throw new NotFoundError("Lead não encontrado.");
-    return lead;
+    return { ...lead, status: lead.status as LeadStatus };
+  }
+
+  // Mudança de status sempre gera evento e sincroniza o cliente na mesma transação (ADR-008)
+  async function applyStatusChange(tx: Transaction, actor: Actor, leadId: string, from: LeadStatus | null, to: LeadStatus) {
+    if (from === to) return;
+    if (from !== null) {
+      await recordLeadEvents(tx, [{ leadId, type: "status_changed", actorId: actor.userId, fromValue: from, toValue: to }]);
+    }
+    await syncClientForStatusChange(tx, { leadId, fromStatus: from, toStatus: to, actorId: actor.userId });
   }
 
   function assertCanEdit(actor: Actor, ownerId: string) {
@@ -205,11 +238,16 @@ export function createLeadsService({ db }: { db: Database }) {
       requirePermission(actor, "leads:create");
       const data = createLeadSchema.parse(input);
       try {
-        const [created] = await db
-          .insert(leads)
-          .values({ ...data, ownerId: actor.userId, createdBy: actor.userId, updatedBy: actor.userId })
-          .returning({ id: leads.id });
-        return created;
+        return await db.transaction(async (tx) => {
+          const [created] = await tx
+            .insert(leads)
+            .values({ ...data, ownerId: actor.userId, createdBy: actor.userId, updatedBy: actor.userId })
+            .returning({ id: leads.id });
+          await recordLeadEvents(tx, [{ leadId: created.id, type: "created", actorId: actor.userId, toValue: data.status }]);
+          // Cadastrado direto na coluna "Convertido" também vira cliente
+          await applyStatusChange(tx, actor, created.id, null, data.status);
+          return created;
+        });
       } catch (error) {
         rethrowDuplicateEmail(error);
       }
@@ -224,21 +262,34 @@ export function createLeadsService({ db }: { db: Database }) {
           const lead = await lockLead(tx, leadId);
           assertCanEdit(actor, lead.ownerId);
 
+          // Mesma regra do kanban (moveLead): lead arquivado não muda de estágio (nem converte/reverte cliente)
+          if (lead.archivedAt && data.status !== lead.status) {
+            throw new DomainError("Desarquive o lead antes de mudar o status.");
+          }
+
           let nextOwnerId = lead.ownerId;
+          const events: LeadEventInput[] = [];
           if (ownerId && ownerId !== lead.ownerId) {
             requirePermission(actor, "leads:assign");
             const [target] = await tx
-              .select({ id: users.id })
+              .select({ id: users.id, name: users.name })
               .from(users)
               .where(and(eq(users.id, ownerId), eq(users.active, true)));
             if (!target) throw new DomainError("Responsável inválido ou inativo.");
+            const [previous] = await tx.select({ name: users.name }).from(users).where(eq(users.id, lead.ownerId));
+            events.push({ leadId, type: "owner_changed", actorId: actor.userId, fromValue: previous?.name, toValue: target.name });
             nextOwnerId = ownerId;
+          }
+          if (data.name !== lead.name || data.email !== lead.email || data.phone !== lead.phone) {
+            events.push({ leadId, type: "contact_updated", actorId: actor.userId });
           }
 
           await tx
             .update(leads)
             .set({ ...data, ownerId: nextOwnerId, updatedBy: actor.userId, updatedAt: new Date() })
             .where(eq(leads.id, leadId));
+          await recordLeadEvents(tx, events);
+          await applyStatusChange(tx, actor, leadId, lead.status, data.status);
         });
       } catch (error) {
         rethrowDuplicateEmail(error);
@@ -253,10 +304,12 @@ export function createLeadsService({ db }: { db: Database }) {
         const lead = await lockLead(tx, leadId);
         assertCanEdit(actor, lead.ownerId);
         if (lead.archivedAt) throw new DomainError("Desarquive o lead antes de movê-lo.");
+        if (lead.status === status) return;
         await tx
           .update(leads)
           .set({ status, updatedBy: actor.userId, updatedAt: new Date() })
           .where(eq(leads.id, leadId));
+        await applyStatusChange(tx, actor, leadId, lead.status, status);
       });
     },
 
@@ -278,15 +331,47 @@ export function createLeadsService({ db }: { db: Database }) {
             updatedAt: new Date(),
           })
           .where(eq(leads.id, leadId));
+        if (Boolean(lead.archivedAt) !== archived) {
+          await recordLeadEvents(tx, [{ leadId, type: archived ? "archived" : "unarchived", actorId: actor.userId }]);
+        }
       });
     },
 
     async deleteLead(actor: Actor, input: unknown): Promise<void> {
       requirePermission(actor, "leads:delete");
       const { leadId } = leadIdSchema.parse(input);
-      // Anotações, anexos e conteúdos saem em cascata (FK ON DELETE CASCADE)
-      const deleted = await db.delete(leads).where(eq(leads.id, leadId)).returning({ id: leads.id });
-      if (deleted.length === 0) throw new NotFoundError("Lead não encontrado.");
+      await db.transaction(async (tx) => {
+        await lockLead(tx, leadId);
+        // Lead que virou cliente não pode ser excluído (apagaria o cliente e o histórico) — ADR-008
+        const [client] = await tx.select({ id: clients.id }).from(clients).where(eq(clients.leadId, leadId));
+        if (client) {
+          throw new DomainError("Este lead já virou cliente e não pode ser excluído. Arquive-o se não quiser vê-lo no kanban.");
+        }
+        // Anotações, anexos, conteúdos e eventos saem em cascata (FK ON DELETE CASCADE)
+        await tx.delete(leads).where(eq(leads.id, leadId));
+      });
+    },
+
+    // ---------- Linha do tempo (eventos próprios; notas/anexos/atendimentos vêm das próprias tabelas) ----------
+
+    async listEvents(actor: Actor, input: unknown): Promise<LeadEvent[]> {
+      requirePermission(actor, "leads:read");
+      const { leadId } = leadIdSchema.parse(input);
+      await assertLeadExists(leadId);
+      const rows = await db
+        .select({
+          id: leadEvents.id,
+          type: leadEvents.type,
+          fromValue: leadEvents.fromValue,
+          toValue: leadEvents.toValue,
+          actorName: users.name,
+          createdAt: leadEvents.createdAt,
+        })
+        .from(leadEvents)
+        .innerJoin(users, eq(users.id, leadEvents.actorId))
+        .where(eq(leadEvents.leadId, leadId))
+        .orderBy(desc(leadEvents.createdAt));
+      return rows.map((row) => ({ ...row, type: row.type as LeadEventType }));
     },
 
     // ---------- Anotações ----------

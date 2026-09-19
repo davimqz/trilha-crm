@@ -14,7 +14,11 @@ const LEADS_PATH = "/leads";
 
 async function run(operation: () => Promise<string>): Promise<ActionResult> {
   const result = await runAction(operation);
-  if (result.status === "success") revalidatePath(LEADS_PATH);
+  if (result.status === "success") {
+    revalidatePath(LEADS_PATH);
+    // Mudanças de status podem criar/arquivar clientes, e contato/anotações/anexos são compartilhados (ADR-008)
+    revalidatePath("/clients");
+  }
   return result;
 }
 
