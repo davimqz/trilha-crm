@@ -24,7 +24,7 @@ export function createTestContext({ rateLimitEnabled = false } = {}) {
     usersService,
     close,
     async reset() {
-      await db.execute(sql`truncate table users, verifications, rate_limits cascade`);
+      await db.execute(sql`truncate table users, verifications, rate_limits, login_attempts cascade`);
     },
   };
 }
