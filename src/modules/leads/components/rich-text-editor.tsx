@@ -18,6 +18,8 @@ type RichTextEditorProps = {
   ref?: Ref<RichTextEditorHandle>;
   label: string;
   disabled?: boolean;
+  // Conteúdo inicial (edição de anotação/atendimento existente)
+  initialContent?: JSONContent | null;
 };
 
 // Só as extensões permitidas pelo ADR-007 (o servidor valida de novo; isto é só para a UX)
@@ -104,9 +106,10 @@ function Toolbar({ editor }: { editor: Editor }) {
   );
 }
 
-export function RichTextEditor({ ref, label, disabled = false }: RichTextEditorProps) {
+export function RichTextEditor({ ref, label, disabled = false, initialContent = null }: RichTextEditorProps) {
   const editor = useEditor({
     extensions,
+    content: initialContent ?? undefined,
     editable: !disabled,
     // Evita divergência de hidratação: o editor só monta no client
     immediatelyRender: false,

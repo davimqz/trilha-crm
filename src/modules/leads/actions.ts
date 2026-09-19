@@ -92,3 +92,19 @@ export async function removeAttachmentAction(leadId: unknown, attachmentId: unkn
     return "Anexo removido.";
   });
 }
+
+export async function updateNoteAction(leadId: unknown, noteId: unknown, content: unknown): Promise<ActionResult> {
+  const actor = await requireActor();
+  return run(async () => {
+    await getLeadsService().updateNote(actor, { leadId, noteId, content });
+    return "Anotação atualizada.";
+  });
+}
+
+export async function deleteNoteAction(leadId: unknown, noteId: unknown): Promise<ActionResult> {
+  const actor = await requireActor();
+  return run(async () => {
+    await getLeadsService().deleteNote(actor, { leadId, noteId });
+    return "Anotação excluída.";
+  });
+}
