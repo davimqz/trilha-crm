@@ -1,5 +1,8 @@
 # Deploy
 
+**No ar:** https://trilha-crm.netlify.app · Projeto Netlify `trilha-crm` · Projeto Neon `trilha-crm` (AWS US East 2, Postgres 18, plano Free).
+Publicado em 2026-09-19.
+
 Produção: **Netlify Free** (app Next.js) + **Neon Free** (Postgres). Custo zero, uso comercial permitido. Decisão: ADR-004.
 
 ## Limites do plano gratuito (e o que fazemos com eles)
@@ -32,7 +35,8 @@ Produção: **Netlify Free** (app Next.js) + **Neon Free** (Postgres). Custo zer
    com *Connection pooling* ligado (`...-pooler...`) e desligado.
 2. **Netlify** → *Add new project* → *Import an existing project* → GitHub → `trilha-crm`. Build command e publish vêm do `netlify.toml`.
    Antes de publicar, cadastre as variáveis da tabela acima.
-3. **Netlify** → *Build & deploy → Branches and deploy contexts*: *Deploy previews* = **Don't deploy**; *Branch deploys* = **None**.
+3. **Netlify** → *Developer settings → Branches and deploy contexts*: *Deploy Previews* = **Don't deploy pull requests**; *Branch deploys* = **None**.
+   Em *General → Project visibility*, escolha **Public** (o projeto nasce privado, exigindo login da Netlify para abrir o site).
 4. Faça o deploy. O build roda as migrations (`pnpm db:migrate`) e depois o `next build`.
 5. **Primeiro administrador** (na sua máquina, uma única vez):
 
@@ -47,13 +51,15 @@ Produção: **Netlify Free** (app Next.js) + **Neon Free** (Postgres). Custo zer
 
 ## Deploys seguintes
 
-Merge na `main` → deploy automático (migrations incluídas). Migrations devem ser **aditivas**: se o build falhar depois
+Merge na `main` → deploy automático (migrations incluídas). Commits que só mexem em `.md` não geram deploy (regra `ignore` no `netlify.toml`). Migrations devem ser **aditivas**: se o build falhar depois
 da migration, o site antigo continua no ar com o banco novo. Agrupe mudanças: cada deploy consome 15 créditos.
 
 ## Backup e restauração
 
 Workflow `.github/workflows/backup.yml`: todo dia às 03:00 (Brasília) faz `pg_dump`, criptografa com AES-256 e guarda como
 artifact privado do repositório por 14 dias. Também mede o tamanho do banco e falha acima de 400 MB (o GitHub avisa por e-mail).
+
+Configurado em 2026-09-19 e testado com uma execução manual (dump de 34 KB). **Guarde a `BACKUP_PASSPHRASE` num cofre de senhas: sem ela o backup é ilegível.**
 
 Ativação (GitHub → repositório → *Settings → Secrets and variables → Actions*):
 

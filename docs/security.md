@@ -186,6 +186,20 @@ Validação por mutação: liberar a regra de autor faz os testes falharem.
 Validação por mutação: afrouxar o limite, não zerar o contador após sucesso ou ignorar o cabeçalho confiável faz os testes falharem.
 Security review do diff: nenhuma vulnerabilidade de alta confiança. Pentest no ambiente publicado: pendente (após o primeiro deploy).
 
+## Pentest em produção — https://trilha-crm.netlify.app (2026-09-19)
+
+| Teste | Resultado |
+|---|---|
+| 7 logins errados trocando `X-Forwarded-For` a cada tentativa | ✅ 401×5 e depois 429 — o IP forjado é ignorado (vale o `x-nf-client-connection-ip`) |
+| Cabeçalhos da página de login (CSP, HSTS, XFO, nosniff, Referrer-Policy, Permissions-Policy) | ✅ todos presentes |
+| `POST /api/auth/sign-up/email` (fora da allowlist) | ✅ 404 |
+| Login em `application/x-www-form-urlencoded` | ✅ 415 |
+| `/leads` sem sessão | ✅ 307 para `/login` |
+| Cookie de sessão | ✅ `__Secure-` + `HttpOnly` + `Secure` + `SameSite=Lax` |
+| Login com `Origin` de outro site | ✅ 403 |
+| Upload de anexo com `Origin` de outro site | ✅ 403 |
+| Backup diário criptografado | ✅ execução manual concluída; artifact privado com 14 dias de retenção |
+
 ## Roadmap de segurança
 
 - ~~Limite de login por conta e IP confiável conforme a hospedagem~~ — feito na Entrega 05.

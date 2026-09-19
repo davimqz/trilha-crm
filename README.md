@@ -1,5 +1,7 @@
 # Trilha CRM
 
+No ar: https://trilha-crm.netlify.app
+
 CRM interno da Trilha Finance. Monólito modular em Next.js + TypeScript + PostgreSQL (Drizzle).
 
 ## Requisitos
