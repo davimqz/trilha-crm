@@ -157,6 +157,17 @@ Security review do diff completo da branch: nenhuma vulnerabilidade de alta conf
 Validação por mutação: remover a checagem de posse do cliente ou a sincronização lead → cliente faz os testes falharem.
 Security review do diff: nenhuma vulnerabilidade de alta confiança.
 
+## Edição/exclusão de anotações e atendimentos (2026-09-19)
+
+| Controle / teste | Resultado |
+|---|---|
+| Só autor (com permissão de escrita) ou gestor/admin (`*-any`) edita/exclui; regra revalidada no servidor com lock da linha | ✅ outro comercial e viewer → ForbiddenError |
+| IDOR: `noteId`/`recordId` sempre buscados junto com `leadId`/`clientId` | ✅ id de outro lead/cliente → NotFound |
+| Conteúdo editado passa pelo mesmo schema estrito (ADR-007); campos extras (`authorId`) recusados | ✅ ZodError |
+| Rastro: edição e exclusão viram eventos na linha do tempo (exclusão guarda trecho/assunto) | ✅ |
+
+Validação por mutação: liberar a regra de autor faz os testes falharem.
+
 ## Roadmap de segurança
 
 - Entrega 05: limite de tentativas de login por conta (independente de IP) e `trustedProxies` conforme a hospedagem.
