@@ -5,17 +5,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { LEAD_STATUS_LABELS, type LeadTab } from "../constants";
 import type { AssignableUser, LeadAttachment, LeadDetail, LeadNote } from "../service";
+import type { TimelineItem } from "../timeline";
 
 import { LeadAttachments } from "./lead-attachments";
 import { LeadEditForm } from "./lead-edit-form";
 import { LeadInfo } from "./lead-info";
 import { LeadNotes } from "./lead-notes";
+import { TimelineView } from "./timeline-view";
 import { useLeadsUrl } from "./use-leads-url";
 
 export type SelectedLead = {
   lead: LeadDetail;
   notes: LeadNote[];
   attachments: LeadAttachment[];
+  timeline: TimelineItem[];
 };
 
 type LeadDialogProps = { selected: SelectedLead | null; tab: LeadTab; users: AssignableUser[] };
@@ -46,6 +49,7 @@ export function LeadDialog({ selected, tab, users }: LeadDialogProps) {
                 <TabsTrigger value="edit">Editar</TabsTrigger>
                 <TabsTrigger value="notes">Anotações ({selected.notes.length})</TabsTrigger>
                 <TabsTrigger value="attachments">Anexos ({selected.attachments.length})</TabsTrigger>
+                <TabsTrigger value="timeline">Linha do tempo</TabsTrigger>
               </TabsList>
               <TabsContent value="info">
                 <LeadInfo lead={selected.lead} />
@@ -58,6 +62,9 @@ export function LeadDialog({ selected, tab, users }: LeadDialogProps) {
               </TabsContent>
               <TabsContent value="attachments">
                 <LeadAttachments leadId={selected.lead.id} attachments={selected.attachments} canEdit={selected.lead.canEdit} />
+              </TabsContent>
+              <TabsContent value="timeline">
+                <TimelineView items={selected.timeline} />
               </TabsContent>
             </Tabs>
           </>

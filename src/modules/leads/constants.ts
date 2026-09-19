@@ -23,7 +23,7 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
 };
 
 // Abas do painel do lead (valor do parâmetro ?tab= na URL)
-export const LEAD_TABS = ["info", "edit", "notes", "attachments"] as const;
+export const LEAD_TABS = ["info", "edit", "notes", "attachments", "timeline"] as const;
 export type LeadTab = (typeof LEAD_TABS)[number];
 
 export const LEAD_SORTS = ["updated_desc", "created_desc", "created_asc", "name_asc", "name_desc"] as const;
