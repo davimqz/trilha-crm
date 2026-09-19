@@ -4,3 +4,4 @@
 
 export * from "../auth/schema";
 export * from "../../modules/leads/schema";
+export * from "../../modules/clients/schema";

@@ -68,3 +68,19 @@ export const NOTE_COLOR_VALUES: readonly string[] = NOTE_COLORS.flatMap((color) 
 
 export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
 export const ATTACHMENTS_PER_LEAD_MAX = 20;
+
+// Eventos da linha do tempo (ADR-008). Valores anteriores/novos ficam em texto (status, nomes etc.)
+export const LEAD_EVENT_TYPES = [
+  "created",
+  "status_changed",
+  "converted",
+  "conversion_reverted",
+  "client_reactivated",
+  "archived",
+  "unarchived",
+  "owner_changed",
+  "contact_updated",
+  "associative_status_changed",
+] as const;
+
+export type LeadEventType = (typeof LEAD_EVENT_TYPES)[number];

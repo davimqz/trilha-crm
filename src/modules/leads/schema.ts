@@ -4,7 +4,7 @@ import { check, customType, index, integer, jsonb, pgTable, text, timestamp, uui
 // Imports relativos: o drizzle-kit não resolve o alias "@/"
 import { users } from "../../core/auth/schema";
 
-import { LEAD_STATUSES } from "./constants";
+import { LEAD_EVENT_TYPES, LEAD_STATUSES } from "./constants";
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
   dataType: () => "bytea",
@@ -88,3 +88,28 @@ export const leadAttachmentContents = pgTable("lead_attachment_contents", {
     .references(() => leadAttachments.id, { onDelete: "cascade" }),
   data: bytea("data").notNull(),
 });
+
+const eventTypeList = sql.raw(LEAD_EVENT_TYPES.map((type) => `'${type}'`).join(", "));
+
+// Linha do tempo (ADR-008): gravado na mesma transação de cada ação sobre o lead/cliente
+export const leadEvents = pgTable(
+  "lead_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    // Valores em texto no momento do evento (status, nomes): o histórico não muda se o usuário for renomeado
+    fromValue: text("from_value"),
+    toValue: text("to_value"),
+    actorId: uuid("actor_id")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("lead_events_type_check", sql`${table.type} in (${eventTypeList})`),
+    index("lead_events_lead_id_idx").on(table.leadId, table.createdAt),
+  ],
+);
