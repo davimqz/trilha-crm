@@ -62,7 +62,8 @@ export function LeadCard({ lead, href, overlay = false }: LeadCardProps) {
         isDragging && "opacity-40",
         overlay && "rotate-2 shadow-lg",
       )}
-      data-testid={`lead-card-${lead.email}`}
+      // A cópia exibida durante o arraste (overlay) não leva o identificador do card original
+      data-testid={overlay ? undefined : `lead-card-${lead.email}`}
       {...(draggable ? { ...attributes, ...listeners, "aria-roledescription": "card arrastável" } : {})}
       // Depois do spread do dnd-kit: estes valem também para cards não arrastáveis
       role="button"
