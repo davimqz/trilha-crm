@@ -244,6 +244,46 @@ describe("clients service", () => {
       expect(list[1].description).toMatchObject({ type: "doc" });
     });
 
+    it("quem registrou edita e exclui; outro comercial e viewer não; gestor pode; eventos na linha do tempo", async () => {
+      const client = await convert(team.admin, (await createLead(team.admin)).id);
+      await clientsService.addServiceRecord(team.sales, record(client.id, team.sales.userId));
+      const [created] = await clientsService.listServiceRecords(team.sales, { clientId: client.id });
+      expect(created.canManage).toBe(true);
+      const edit = { ...record(client.id, team.sales.userId, { subject: "Assunto corrigido", type: "whatsapp" }), recordId: created.id };
+
+      await expect(clientsService.updateServiceRecord(team.sales2, edit)).rejects.toThrow(ForbiddenError);
+      await expect(clientsService.updateServiceRecord(team.viewer, edit)).rejects.toThrow(ForbiddenError);
+      await clientsService.updateServiceRecord(team.sales, edit);
+      const [updated] = await clientsService.listServiceRecords(team.viewer, { clientId: client.id });
+      expect(updated).toMatchObject({ subject: "Assunto corrigido", type: "whatsapp", updatedByName: "Vendedor", canManage: false });
+
+      await expect(clientsService.deleteServiceRecord(team.sales2, { clientId: client.id, recordId: created.id })).rejects.toThrow(ForbiddenError);
+      await clientsService.deleteServiceRecord(team.manager, { clientId: client.id, recordId: created.id });
+      expect(await clientsService.listServiceRecords(team.admin, { clientId: client.id })).toHaveLength(0);
+
+      const events = await leadsService.listEvents(team.viewer, { leadId: client.leadId });
+      expect(events[0]).toMatchObject({ type: "service_record_deleted", fromValue: "WhatsApp — Assunto corrigido", actorName: "Gestor" });
+      expect(events[1]).toMatchObject({ type: "service_record_edited", toValue: "Assunto corrigido" });
+    });
+
+    it("IDOR: não altera atendimento usando o id de outro cliente; data futura recusada na edição", async () => {
+      const clientA = await convert(team.admin, (await createLead(team.admin)).id);
+      const clientB = await convert(team.admin, (await createLead(team.admin)).id);
+      await clientsService.addServiceRecord(team.admin, record(clientA.id, team.admin.userId));
+      const [item] = await clientsService.listServiceRecords(team.admin, { clientId: clientA.id });
+
+      await expect(
+        clientsService.updateServiceRecord(team.admin, { ...record(clientB.id, team.admin.userId), recordId: item.id }),
+      ).rejects.toThrow(NotFoundError);
+      await expect(clientsService.deleteServiceRecord(team.admin, { clientId: clientB.id, recordId: item.id })).rejects.toThrow(NotFoundError);
+      await expect(
+        clientsService.updateServiceRecord(team.admin, {
+          ...record(clientA.id, team.admin.userId, { occurredAt: new Date(Date.now() + 3_600_000).toISOString() }),
+          recordId: item.id,
+        }),
+      ).rejects.toThrow(ZodError);
+    });
+
     it("recusa data no futuro, tipo inválido, assunto curto, responsável inativo, viewer e cliente arquivado", async () => {
       const { id: leadId } = await createLead(team.admin);
       const client = await convert(team.admin, leadId);
