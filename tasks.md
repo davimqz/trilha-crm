@@ -302,7 +302,7 @@ modal com Informações, Editar, Anotações, Anexos, **Atendimentos** e **Linha
 
 ### Definition of Done
 
-- [x] Critérios 1–12 · [ ] CI verde · [x] Docs
+- [x] Critérios 1–12 · [x] CI verde · [x] Docs
 
 # Entrega 05 — Hardening + Deploy
 
