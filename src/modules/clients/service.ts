@@ -56,6 +56,7 @@ export type ServiceRecord = {
   type: ServiceRecordType;
   subject: string;
   description: RichTextDoc | null;
+  responsibleId: string;
   responsibleName: string;
   createdByName: string;
   createdAt: Date;
@@ -275,6 +276,7 @@ export function createClientsService({ db }: { db: Database }) {
           type: clientServiceRecords.type,
           subject: clientServiceRecords.subject,
           description: clientServiceRecords.description,
+          responsibleId: clientServiceRecords.responsibleId,
           responsibleName: userNameOf(clientServiceRecords.responsibleId),
           createdBy: clientServiceRecords.createdBy,
           createdByName: userNameOf(clientServiceRecords.createdBy),

@@ -43,3 +43,23 @@ export async function addServiceRecordAction(input: unknown): Promise<ActionResu
   if (result.status === "success") revalidatePath("/clients");
   return result;
 }
+
+export async function updateServiceRecordAction(input: unknown): Promise<ActionResult> {
+  const actor = await requireActor();
+  const result = await runAction(async () => {
+    await getClientsService().updateServiceRecord(actor, input);
+    return "Atendimento atualizado.";
+  });
+  if (result.status === "success") revalidatePath("/clients");
+  return result;
+}
+
+export async function deleteServiceRecordAction(clientId: unknown, recordId: unknown): Promise<ActionResult> {
+  const actor = await requireActor();
+  const result = await runAction(async () => {
+    await getClientsService().deleteServiceRecord(actor, { clientId, recordId });
+    return "Atendimento excluído.";
+  });
+  if (result.status === "success") revalidatePath("/clients");
+  return result;
+}
