@@ -35,9 +35,11 @@ export type CreateAuthOptions = {
   secret: string;
   baseURL: string;
   rateLimitEnabled?: boolean;
+  // Cabeçalho confiável com o IP do cliente (padrão do Better Auth: x-forwarded-for)
+  ipAddressHeader?: string;
 };
 
-export function createAuth({ db, secret, baseURL, rateLimitEnabled = true }: CreateAuthOptions) {
+export function createAuth({ db, secret, baseURL, rateLimitEnabled = true, ipAddressHeader }: CreateAuthOptions) {
   return betterAuth({
     appName: "Trilha CRM",
     secret,
@@ -81,6 +83,7 @@ export function createAuth({ db, secret, baseURL, rateLimitEnabled = true }: Cre
       // o que faria os testes não refletirem produção
       disableOriginCheck: false,
       disableCSRFCheck: false,
+      ipAddress: ipAddressHeader ? { ipAddressHeaders: [ipAddressHeader] } : undefined,
       cookiePrefix: "trilha",
       database: { generateId: "uuid" },
     },

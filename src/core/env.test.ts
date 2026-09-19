@@ -29,6 +29,25 @@ describe("getEnv", () => {
     expect(() => getEnv()).toThrow(/BETTER_AUTH_SECRET/);
   });
 
+  it("exige AUTH_IP_HEADER em produção", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const { getEnv } = await import("./env");
+    expect(() => getEnv()).toThrow(/AUTH_IP_HEADER/);
+  });
+
+  it("aceita AUTH_IP_HEADER em produção e normaliza para minúsculas", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("AUTH_IP_HEADER", " X-NF-Client-Connection-IP ");
+    const { getEnv } = await import("./env");
+    expect(getEnv().AUTH_IP_HEADER).toBe("x-nf-client-connection-ip");
+  });
+
+  it("rejeita AUTH_IP_HEADER com caracteres inválidos", async () => {
+    vi.stubEnv("AUTH_IP_HEADER", "x-ip: 1.2.3.4");
+    const { getEnv } = await import("./env");
+    expect(() => getEnv()).toThrow(/AUTH_IP_HEADER/);
+  });
+
   it("não expõe o valor da variável na mensagem de erro", async () => {
     vi.stubEnv("DATABASE_URL", "not-a-url-secret-value");
     const { getEnv } = await import("./env");
