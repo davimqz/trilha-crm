@@ -86,6 +86,22 @@ test.describe("clientes (admin)", () => {
     await expect(timeline).toContainText("Atendimento (Ligação): Cobrança da mensalidade");
     await expect(timeline.getByTestId("timeline-item").first()).toContainText(/\d{2}\/\d{2}\/\d{4} às \d{2}:\d{2}/);
 
+    // Editar e excluir o atendimento
+    await page.getByRole("tab", { name: /Atendimentos/ }).click();
+    const item = page.getByTestId("service-record").first();
+    await item.getByRole("button", { name: "Editar atendimento Cobrança da mensalidade" }).click();
+    const editForm = page.getByTestId("service-record-edit-form");
+    await editForm.getByLabel("Assunto").fill("Cobrança renegociada");
+    await editForm.getByRole("button", { name: "Salvar alterações" }).click();
+    await expect(item).toContainText("Cobrança renegociada");
+    await expect(item).toContainText(/Editado em \d{2}\/\d{2}\/\d{4}/);
+    await item.getByRole("button", { name: "Excluir atendimento Cobrança renegociada" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Excluir" }).click();
+    await expect(page.getByTestId("service-record")).toHaveCount(0);
+    await page.getByRole("tab", { name: "Linha do tempo" }).click();
+    await expect(page.getByTestId("timeline")).toContainText("Atendimento editado: Cobrança renegociada");
+    await expect(page.getByTestId("timeline")).toContainText("Atendimento excluído: Ligação — Cobrança renegociada");
+
     await page.getByTestId("client-dialog").getByRole("button", { name: "Fechar" }).click();
     expect(await activeCount(page)).toBe(before);
   });
