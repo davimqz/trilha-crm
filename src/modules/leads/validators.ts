@@ -12,20 +12,20 @@ import { richTextDocSchema } from "./rich-text";
 
 const leadId = z.uuid("Lead inválido.");
 
-const name = z
+export const leadNameSchema = z
   .string()
   .trim()
   .min(2, "Informe o nome (mínimo 2 caracteres).")
   .max(LEAD_NAME_MAX, `Nome muito longo (máximo ${LEAD_NAME_MAX} caracteres).`);
 
-const email = z
+export const leadEmailSchema = z
   .string()
   .trim()
   .toLowerCase()
   .max(254, "E-mail muito longo.")
   .pipe(z.email("E-mail inválido."));
 
-const phone = z.string().transform((value, context) => {
+export const leadPhoneSchema = z.string().transform((value, context) => {
   const normalized = normalizePhone(value);
   if (!normalized) {
     context.addIssue({ code: "custom", message: "Telefone inválido. Informe DDD + número, ex.: (11) 91234-5678." });
@@ -35,6 +35,9 @@ const phone = z.string().transform((value, context) => {
 });
 
 const status = z.enum(LEAD_STATUSES, "Status inválido.");
+const name = leadNameSchema;
+const email = leadEmailSchema;
+const phone = leadPhoneSchema;
 
 // strictObject: ownerId, archivedAt, createdBy etc. nunca vêm do cliente
 export const createLeadSchema = z.strictObject({ name, email, phone, status });

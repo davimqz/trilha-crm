@@ -7,7 +7,7 @@ export type PermissionDefinition = {
 };
 
 // Ícones do menu lateral: nomes (serializáveis) mapeados para componentes em src/app/(app)/app-sidebar.tsx
-export const NAV_ICONS = ["home", "kanban", "users", "building", "settings"] as const;
+export const NAV_ICONS = ["home", "kanban", "users", "building", "settings", "handshake"] as const;
 export type NavIcon = (typeof NAV_ICONS)[number];
 
 export type NavigationItem = {
