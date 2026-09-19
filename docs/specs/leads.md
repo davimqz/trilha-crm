@@ -102,7 +102,9 @@ Nome, e-mail, telefone, status, responsável, criado em/por, **última edição 
 - Histórico, da mais recente para a mais antiga:
   - **Título:** data e hora da anotação (ex.: "18/09/2026 às 14:32"), acompanhada do autor.
   - **Conteúdo:** o texto formatado.
-- **[Decisão]** Anotações não são editadas nem excluídas: o histórico é imutável. Excluir o lead apaga as anotações.
+- Anotações podem ser **editadas** e **excluídas** (confirmado pelo dono do produto em 2026-09-19) pelo **autor** ou por
+  **gestor/admin**. A anotação mostra "editada em … por …". A linha do tempo registra "Anotação editada" e
+  "Anotação excluída" (com um trecho do texto excluído), com data, hora e autor. Excluir o lead apaga as anotações.
 - Limite de 10.000 caracteres de texto por anotação.
 
 ### 4.4 Anexos
@@ -205,6 +207,6 @@ o status pode ser alterado no formulário de edição, os campos têm rótulos e
 
 - Especificação da seção **Clientes** e do que acontece ao **converter** um lead (Entrega 04).
 - Confirmar se o `sales` deve poder anotar e anexar em leads de **outros** responsáveis (hoje: não, conforme o ADR-003).
-- Confirmar se anotações devem poder ser editadas ou excluídas (hoje: histórico imutável).
-- Confirmar se um lead **arquivado** pode continuar recebendo edições, anotações e anexos (hoje: sim; só mover no kanban é bloqueado).
-- Confirmar se o `viewer` deve ver anotações e baixar anexos de todos os leads (hoje: sim, conforme §6).
+- ✅ Anotações editáveis/excluíveis (autor, gestor, admin) — confirmado 2026-09-19.
+- ✅ Lead **arquivado** continua aceitando edições, anotações e anexos (só não muda de coluna) — confirmado "por enquanto".
+- ✅ `viewer` vê anotações e anexos de todos os leads (sem alterar) — confirmado "por enquanto".
