@@ -10,3 +10,6 @@ export function createDatabase(url: string) {
 }
 
 export type Database = ReturnType<typeof createDatabase>["db"];
+
+// Transação do Drizzle: usada por helpers que precisam participar da transação de outro service
+export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
