@@ -117,6 +117,15 @@ describe("clients service", () => {
       expect(await db.select().from(clients).where(eq(clients.leadId, leadId))).toHaveLength(1);
     });
 
+    it("lead arquivado não muda de status nem pelo formulário (não converte cliente)", async () => {
+      const { id: leadId } = await createLead(team.sales);
+      await leadsService.setArchived(team.sales, { leadId, archived: true });
+      await expect(
+        leadsService.updateLead(team.sales, { leadId, name: "Pessoa", email: "arq@x.com", phone: "11912345678", status: "converted" }),
+      ).rejects.toThrow(DomainError);
+      expect(await db.select().from(clients).where(eq(clients.leadId, leadId))).toHaveLength(0);
+    });
+
     it("mover para a mesma coluna não gera evento", async () => {
       const { id: leadId } = await createLead(team.sales);
       await leadsService.moveLead(team.sales, { leadId, status: "prospect" });

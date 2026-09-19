@@ -262,6 +262,11 @@ export function createLeadsService({ db }: { db: Database }) {
           const lead = await lockLead(tx, leadId);
           assertCanEdit(actor, lead.ownerId);
 
+          // Mesma regra do kanban (moveLead): lead arquivado não muda de estágio (nem converte/reverte cliente)
+          if (lead.archivedAt && data.status !== lead.status) {
+            throw new DomainError("Desarquive o lead antes de mudar o status.");
+          }
+
           let nextOwnerId = lead.ownerId;
           const events: LeadEventInput[] = [];
           if (ownerId && ownerId !== lead.ownerId) {
