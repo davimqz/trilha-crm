@@ -376,16 +376,16 @@ describe("leads service", () => {
       expect(await service.listAttachments(team.viewer, { leadId: id })).toHaveLength(0);
     });
 
-    it("recusa tipo falso, arquivo vazio, acima de 10 MB e acima de 20 por lead", async () => {
+    it("recusa tipo falso, arquivo vazio, acima de 4 MB e acima de 20 por lead", async () => {
       const { id } = await createLeadAs(team.sales);
       const html = new TextEncoder().encode("<html><script>alert(1)</script></html>");
       await expect(service.addAttachment(team.sales, { leadId: id, fileName: "x.pdf", data: html })).rejects.toThrow(/não permitido/);
       await expect(service.addAttachment(team.sales, { leadId: id, fileName: "x.html", data: html })).rejects.toThrow(/não permitido/);
       await expect(service.addAttachment(team.sales, { leadId: id, fileName: "x.pdf", data: new Uint8Array() })).rejects.toThrow(/vazio/);
 
-      const big = new Uint8Array(10 * 1024 * 1024 + 1);
+      const big = new Uint8Array(4 * 1024 * 1024 + 1);
       big.set(PDF);
-      await expect(service.addAttachment(team.sales, { leadId: id, fileName: "x.pdf", data: big })).rejects.toThrow(/10 MB/);
+      await expect(service.addAttachment(team.sales, { leadId: id, fileName: "x.pdf", data: big })).rejects.toThrow(/4 MB/);
 
       for (let index = 0; index < 20; index++) {
         await service.addAttachment(team.sales, { leadId: id, fileName: `a${index}.pdf`, data: PDF });

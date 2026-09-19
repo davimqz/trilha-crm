@@ -66,7 +66,10 @@ export const NOTE_COLORS = [
 
 export const NOTE_COLOR_VALUES: readonly string[] = NOTE_COLORS.flatMap((color) => (color.value ? [color.value] : []));
 
-export const ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024;
+// Netlify Free limita o corpo da requisição a 6 MB (binário vira base64, ~4,5 MB úteis) — ver docs/deployment.md
+export const ATTACHMENT_MAX_MB = 4;
+export const ATTACHMENT_MAX_BYTES = ATTACHMENT_MAX_MB * 1024 * 1024;
+export const ATTACHMENT_TOO_LARGE_MESSAGE = `O arquivo passa do limite de ${ATTACHMENT_MAX_MB} MB.`;
 export const ATTACHMENTS_PER_LEAD_MAX = 20;
 
 // Eventos da linha do tempo (ADR-008). Valores anteriores/novos ficam em texto (status, nomes etc.)

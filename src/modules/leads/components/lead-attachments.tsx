@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatShortDateTime } from "@/lib/format";
 
 import { removeAttachmentAction } from "../actions";
-import { ATTACHMENT_MAX_BYTES, ATTACHMENTS_PER_LEAD_MAX } from "../constants";
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_MAX_MB, ATTACHMENT_TOO_LARGE_MESSAGE, ATTACHMENTS_PER_LEAD_MAX } from "../constants";
 import { ACCEPTED_EXTENSIONS, ATTACHMENT_KINDS, formatFileSize, previewTypeOf } from "../file-types";
 import type { LeadAttachment } from "../service";
 
@@ -33,7 +33,7 @@ export function LeadAttachments({ leadId, attachments, canEdit }: LeadAttachment
     if (!file) return;
     // Checagem antecipada só para UX; o servidor valida tamanho e conteúdo de novo
     if (file.size > ATTACHMENT_MAX_BYTES) {
-      toast.error("O arquivo passa do limite de 10 MB.");
+      toast.error(ATTACHMENT_TOO_LARGE_MESSAGE);
       return;
     }
 
@@ -84,7 +84,7 @@ export function LeadAttachments({ leadId, attachments, canEdit }: LeadAttachment
             {uploading ? "Enviando…" : "Adicionar"}
           </Button>
           <p className="text-xs text-muted-foreground">
-            PDF, DOC, DOCX, XLS, XLSX, PNG, JPG, TXT ou CSV · até 10 MB · máximo de {ATTACHMENTS_PER_LEAD_MAX} anexos
+            PDF, DOC, DOCX, XLS, XLSX, PNG, JPG, TXT ou CSV · até {ATTACHMENT_MAX_MB} MB · máximo de {ATTACHMENTS_PER_LEAD_MAX} anexos
           </p>
         </div>
       )}
