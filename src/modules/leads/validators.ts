@@ -57,6 +57,8 @@ export const setArchivedSchema = z.strictObject({ leadId, archived: z.boolean() 
 export const leadIdSchema = z.strictObject({ leadId });
 
 export const addNoteSchema = z.strictObject({ leadId, content: richTextDocSchema });
+export const noteRefSchema = z.strictObject({ leadId, noteId: z.uuid("Anotação inválida.") });
+export const updateNoteSchema = z.strictObject({ leadId, noteId: z.uuid("Anotação inválida."), content: richTextDocSchema });
 
 export const attachmentRefSchema = z.strictObject({ leadId, attachmentId: z.uuid("Anexo inválido.") });
 

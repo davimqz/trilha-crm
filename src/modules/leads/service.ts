@@ -20,7 +20,8 @@ import {
 } from "./constants";
 import { recordLeadEvents, type LeadEventInput } from "./events";
 import { ATTACHMENT_KINDS, detectAttachmentKind, sanitizeFileName, type AttachmentKind } from "./file-types";
-import type { RichTextDoc } from "./rich-text";
+import { plainText, type RichTextDoc } from "./rich-text";
+import { excerpt } from "./timeline";
 import { leadAttachmentContents, leadAttachments, leadEvents, leadNotes, leads } from "./schema";
 import {
   addNoteSchema,
@@ -29,8 +30,10 @@ import {
   leadIdSchema,
   listLeadsSchema,
   moveLeadSchema,
+  noteRefSchema,
   setArchivedSchema,
   updateLeadSchema,
+  updateNoteSchema,
 } from "./validators";
 
 // ---------- DTOs (só o necessário para a UI) ----------
@@ -55,7 +58,16 @@ export type LeadCard = {
 export type LeadDetail = LeadCard &
   LeadCapabilities & { createdByName: string; updatedByName: string };
 
-export type LeadNote = { id: string; content: RichTextDoc; authorName: string; createdAt: Date };
+export type LeadNote = {
+  id: string;
+  content: RichTextDoc;
+  authorName: string;
+  createdAt: Date;
+  updatedAt: Date | null;
+  updatedByName: string | null;
+  // Autor, gestor ou admin podem editar/excluir (calculado no servidor; a regra é revalidada na escrita)
+  canManage: boolean;
+};
 
 export type LeadAttachment = {
   id: string;
@@ -127,6 +139,11 @@ function escapeLike(value: string): string {
 
 function isOwnerOrAny(actor: Actor, ownerId: string, own: `leads:${string}`, any: `leads:${string}`): boolean {
   return can(actor, any) || (can(actor, own) && ownerId === actor.userId);
+}
+
+// Anotação: o autor (se ainda pode escrever em leads) ou quem pode alterar qualquer lead (gestor/admin)
+export function canManageNote(actor: Actor, authorId: string): boolean {
+  return can(actor, "leads:update-any") || (can(actor, "leads:update") && authorId === actor.userId);
 }
 
 export function capabilitiesFor(actor: Actor, ownerId: string): LeadCapabilities {
@@ -382,12 +399,67 @@ export function createLeadsService({ db }: { db: Database }) {
       await assertLeadExists(leadId);
 
       const rows = await db
-        .select({ id: leadNotes.id, content: leadNotes.content, authorName: users.name, createdAt: leadNotes.createdAt })
+        .select({
+          id: leadNotes.id,
+          content: leadNotes.content,
+          authorId: leadNotes.authorId,
+          authorName: users.name,
+          createdAt: leadNotes.createdAt,
+          updatedAt: leadNotes.updatedAt,
+          updatedByName: sql<string | null>`(select ${users.name} from ${users} where ${users.id} = ${leadNotes.updatedBy})`,
+        })
         .from(leadNotes)
         .innerJoin(users, eq(users.id, leadNotes.authorId))
         .where(eq(leadNotes.leadId, leadId))
         .orderBy(desc(leadNotes.createdAt));
-      return rows.map((row) => ({ ...row, content: row.content as RichTextDoc }));
+      return rows.map(({ authorId, ...row }) => ({
+        ...row,
+        content: row.content as RichTextDoc,
+        canManage: canManageNote(actor, authorId),
+      }));
+    },
+
+    async updateNote(actor: Actor, input: unknown): Promise<void> {
+      requirePermission(actor, "leads:update");
+      const { leadId, noteId, content } = updateNoteSchema.parse(input);
+      await db.transaction(async (tx) => {
+        // noteId + leadId juntos: impede editar anotação de outro lead trocando só um dos ids
+        const [note] = await tx
+          .select({ authorId: leadNotes.authorId })
+          .from(leadNotes)
+          .where(and(eq(leadNotes.id, noteId), eq(leadNotes.leadId, leadId)))
+          .for("update");
+        if (!note) throw new NotFoundError("Anotação não encontrada.");
+        if (!canManageNote(actor, note.authorId)) {
+          throw new ForbiddenError("Só o autor, gestores e administradores podem editar esta anotação.");
+        }
+        await tx
+          .update(leadNotes)
+          .set({ content, updatedAt: new Date(), updatedBy: actor.userId })
+          .where(eq(leadNotes.id, noteId));
+        await recordLeadEvents(tx, [{ leadId, type: "note_edited", actorId: actor.userId }]);
+      });
+    },
+
+    async deleteNote(actor: Actor, input: unknown): Promise<void> {
+      requirePermission(actor, "leads:update");
+      const { leadId, noteId } = noteRefSchema.parse(input);
+      await db.transaction(async (tx) => {
+        const [note] = await tx
+          .select({ authorId: leadNotes.authorId, content: leadNotes.content })
+          .from(leadNotes)
+          .where(and(eq(leadNotes.id, noteId), eq(leadNotes.leadId, leadId)))
+          .for("update");
+        if (!note) throw new NotFoundError("Anotação não encontrada.");
+        if (!canManageNote(actor, note.authorId)) {
+          throw new ForbiddenError("Só o autor, gestores e administradores podem excluir esta anotação.");
+        }
+        await tx.delete(leadNotes).where(eq(leadNotes.id, noteId));
+        // Trecho do texto excluído fica na linha do tempo (rastro do que foi apagado)
+        await recordLeadEvents(tx, [
+          { leadId, type: "note_deleted", actorId: actor.userId, fromValue: excerpt(plainText(note.content as RichTextDoc)) },
+        ]);
+      });
     },
 
     async addNote(actor: Actor, input: unknown): Promise<void> {
