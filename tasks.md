@@ -18,7 +18,7 @@
 | 01 | Foundation | 🟢 |
 | 02 | Autenticação + RBAC + gestão de usuários | 🟢 |
 | 03 | Módulo Leads (kanban, anotações, anexos) | 🟢 |
-| 04 | Módulo Clientes (+ conversão lead → cliente) | 🟡 aguardando especificação do dono do produto |
+| 04 | Módulo Clientes (conversão, atendimentos, linha do tempo) | 🔵 |
 | 05 | Hardening + Deploy do MVP | ⚪ |
 
 ---
@@ -263,9 +263,46 @@ edição/exclusão de anotações.
 - [x] CI verde (lint, typecheck, unit, integração, build, E2E)
 - [x] Docs atualizadas (spec, architecture, repository-map, security)
 
-# Entrega 04 — Clientes 🟡
+# Entrega 04 — Clientes
 
-Aguardando especificação (campos, relação com lead, conversão).
+## Objetivo
+
+Seção Clientes: clientes nascem da conversão de leads; lista com contador de ativos, busca, filtros, ordenação,
+modal com Informações, Editar, Anotações, Anexos, **Atendimentos** e **Linha do tempo** (histórico completo).
+
+**Especificação:** [`docs/specs/clients.md`](docs/specs/clients.md) · **Decisão:** ADR-008.
+
+## Tasks
+
+### Definição
+
+- [x] Regras de negócio confirmadas (atendimento = registro de contato; ativos = adimplentes; reverter arquiva; histórico compartilhado)
+- [x] Especificação + ADR-008
+
+### Development
+
+- [ ] Schema: `lead_events`, `clients`, `client_service_records` + migration com backfill
+- [ ] Eventos gravados em todas as ações de leads (criar, mover, editar, responsável, arquivar)
+- [ ] Conversão/reversão/reativação na transação do lead; bloqueio de exclusão de lead convertido
+- [ ] Service de clientes (lista, contador, detalhe, editar, atendimentos) + linha do tempo
+- [ ] UI: página Clientes, modal com 6 abas, atendimentos, linha do tempo (também no lead)
+- [ ] Menu "Clientes"
+
+### QA
+
+- [ ] Unit · [ ] Integração · [ ] E2E
+
+### Security
+
+- [ ] Security review · [ ] Pentest
+
+### Git
+
+- [x] Branch `feature/clients` · [ ] Commits · [ ] PR
+
+### Definition of Done
+
+- [ ] Critérios 1–12 · [ ] CI verde · [ ] Docs
 
 # Entrega 05 — Hardening + Deploy
 
