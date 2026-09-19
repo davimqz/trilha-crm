@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import {
+  TEST_BASE_URL,
   TEST_PASSWORD,
   authRequest,
   createTestContext,
@@ -10,6 +11,7 @@ import {
   toActor,
 } from "../../../test/helpers/auth-context";
 
+import { createAuth } from "./create-auth";
 import { users } from "./schema";
 
 // Pentest automatizado da superfície HTTP do Better Auth (handler real, banco real)
@@ -73,6 +75,33 @@ describe("superfície HTTP do auth", () => {
 
     // Mesmo com a senha certa, o IP segue bloqueado na janela
     expect((await signIn(auth, "viewer@trilha.test", TEST_PASSWORD, "10.0.3.1")).response.status).toBe(429);
+  });
+
+  it("IP confiável: com o cabeçalho da hospedagem configurado, trocar X-Forwarded-For não fura o limite", async () => {
+    await seedViewer();
+    const trustedAuth = createAuth({
+      db,
+      secret: "segredo-de-teste-com-mais-de-32-caracteres",
+      baseURL: TEST_BASE_URL,
+      ipAddressHeader: "x-nf-client-connection-ip",
+    });
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const response = await trustedAuth.handler(
+        new Request(`${TEST_BASE_URL}/api/auth/sign-in/email`, {
+          method: "POST",
+          headers: {
+            origin: TEST_BASE_URL,
+            "content-type": "application/json",
+            "x-nf-client-connection-ip": "203.0.113.7",
+            "x-forwarded-for": `198.51.100.${attempt}`,
+          },
+          body: JSON.stringify({ email: "viewer@trilha.test", password: `errada-${attempt}-xxxxx` }),
+        }),
+      );
+      statuses.push(response.status);
+    }
+    expect(statuses).toEqual([401, 401, 401, 401, 401, 429]);
   });
 
   describe("CSRF", () => {

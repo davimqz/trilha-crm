@@ -13,6 +13,7 @@ import { syncClientForStatusChange } from "@/modules/clients/sync";
 
 import {
   ATTACHMENT_MAX_BYTES,
+  ATTACHMENT_TOO_LARGE_MESSAGE,
   ATTACHMENTS_PER_LEAD_MAX,
   type LeadEventType,
   type LeadSort,
@@ -505,7 +506,7 @@ export function createLeadsService({ db }: { db: Database }) {
       const { leadId } = leadIdSchema.parse({ leadId: input.leadId });
 
       if (input.data.byteLength === 0) throw new DomainError("O arquivo está vazio.");
-      if (input.data.byteLength > ATTACHMENT_MAX_BYTES) throw new DomainError("O arquivo passa do limite de 10 MB.");
+      if (input.data.byteLength > ATTACHMENT_MAX_BYTES) throw new DomainError(ATTACHMENT_TOO_LARGE_MESSAGE);
 
       const fileName = sanitizeFileName(input.fileName);
       const kind = detectAttachmentKind(fileName, input.data);

@@ -105,9 +105,27 @@ Regras:
 
 ## ADR-004 — Hospedagem e jobs em background
 
-**Status:** Adiada para a Entrega de Deploy
+**Status:** Aceita (2026-09-19) — **Netlify Free + Neon Free**
 
-Opções mapeadas:
+### Decisão
+
+O dono do produto pediu custo zero. Comparação (setembro/2026):
+
+- **Netlify Free + Neon Free (escolhida):** uso comercial permitido, sem cartão, Next.js suportado sem configuração.
+  Limites: 300 créditos/mês (15 por deploy), corpo de requisição de 6 MB (anexos caem para 4 MB), funções em Ohio;
+  Neon com 0,5 GB e hibernação após 5 min. Detalhes e mitigações em `docs/deployment.md`.
+- Vercel Hobby: proibido para uso comercial.
+- Cloudflare Workers Free: 10 ms de CPU por requisição — o hash de senha (scrypt) não cabe.
+- Render Free: banco expira em 30 dias e cold start de ~1 min.
+- Oracle Always Free: exige cartão, recursos reduzidos em 2026 e VMs ociosas podem ser recolhidas.
+
+### Consequências
+
+- Anexos limitados a 4 MB enquanto estivermos no plano gratuito; ao migrar (Netlify Pro, VPS ou armazenamento de objetos), revisar.
+- IP do cliente vem de `x-nf-client-connection-ip` (`AUTH_IP_HEADER`); o login também tem limite por conta.
+- Backup diário próprio (o PITR do Neon Free é de 6 h).
+
+Opções mapeadas originalmente:
 
 - **Vercel + Neon (Postgres grátis):** melhor experiência com Next.js. Atenção: o plano Hobby da Vercel é
   **somente para uso não comercial**; uso por empresa exige o plano Pro.
@@ -166,7 +184,7 @@ Leads precisam de anexos (PDF, DOC, planilhas, imagens). A hospedagem ainda não
   listagens nunca carreguem os arquivos.
 - Acesso concentrado no service do módulo (`addAttachment`, `getAttachmentFile`, `removeAttachment`). Uma interface
   `AttachmentStorage` será extraída quando existir um segundo backend (tech debt registrado).
-- Limites: 10 MB por arquivo, 20 anexos por lead, tipos em lista permitida, validados pelo **conteúdo**.
+- Limites: 4 MB por arquivo (era 10 MB; reduzido pelo limite de 6 MB por requisição da Netlify Free — Entrega 05), 20 anexos por lead, tipos em lista permitida, validados pelo **conteúdo**.
 - Download por route handler autenticado, sempre como `attachment` e com `nosniff` + `CSP: sandbox` + `X-Frame-Options: DENY`.
 - Pré-visualização (`/preview`) só para PDF, PNG/JPG e TXT/CSV: `inline`, `X-Frame-Options: SAMEORIGIN` e
   `CSP frame-ancestors 'self'` (exibível só dentro do CRM). Imagem e texto com `sandbox`; texto sempre `text/plain`.

@@ -120,7 +120,7 @@ Nome, e-mail, telefone, status, responsável, criado em/por, **última edição 
       a explicação; use **Baixar**.
   - **Baixar** — download para o computador, com o nome original.
   - **Remover** (com confirmação; só para quem pode editar o lead).
-- **[Decisão]** Limites: 10 MB por arquivo, até 20 anexos por lead. Tipos fora da lista são recusados.
+- **[Decisão]** Limites: 4 MB por arquivo (limite da hospedagem gratuita — ver `docs/deployment.md`), até 20 anexos por lead. Tipos fora da lista são recusados.
 
 ## 5. Regras de dados
 
@@ -173,7 +173,7 @@ o status pode ser alterado no formulário de edição, os campos têm rótulos e
 9. Excluir (após confirmação) remove o lead, as anotações e os anexos.
 10. Uma anotação com negrito, sublinhado, cor e listas aparece no histórico com data/hora como título e a formatação preservada.
 11. Anexar um PDF lista o arquivo com nome, tipo "PDF", tamanho e data; ele pode ser baixado e removido.
-12. Arquivos de tipo não permitido ou acima de 10 MB são recusados com mensagem clara.
+12. Arquivos de tipo não permitido ou acima de 4 MB são recusados com mensagem clara.
 13. As permissões da §6 são respeitadas no servidor (o `viewer` não altera nada, o `sales` não altera leads de outros).
 
 ## 9. QA

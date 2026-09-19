@@ -42,3 +42,14 @@ test.describe("autenticação", () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 });
+
+test.describe("health checks", () => {
+  test("públicos, sem cache e sem detalhes internos", async ({ request }) => {
+    for (const path of ["/api/health", "/api/health/live"]) {
+      const response = await request.get(path);
+      expect(response.status()).toBe(200);
+      expect(response.headers()["cache-control"]).toContain("no-store");
+      expect(await response.json()).toEqual({ status: "ok" });
+    }
+  });
+});

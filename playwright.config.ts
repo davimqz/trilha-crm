@@ -31,6 +31,8 @@ export default defineConfig({
       DATABASE_URL: databaseUrl,
       BETTER_AUTH_URL: E2E_BASE_URL,
       BETTER_AUTH_SECRET: "segredo-somente-para-testes-e2e-0123456789",
+      // Os testes simulam IPs distintos por papel via X-Forwarded-For (não há proxy na frente)
+      AUTH_IP_HEADER: "x-forwarded-for",
     },
   },
 });

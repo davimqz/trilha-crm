@@ -1,10 +1,7 @@
-import { getAuth } from "@/core/auth";
-import { checkAuthRequest } from "@/core/auth/allowed-routes";
+import { getAuthHttpHandler } from "@/core/auth";
 
-async function handle(request: Request) {
-  const check = checkAuthRequest(request);
-  if (!check.allowed) return new Response(null, { status: check.status });
-  return getAuth().handler(request);
+function handle(request: Request) {
+  return getAuthHttpHandler()(request);
 }
 
 export { handle as GET, handle as POST };

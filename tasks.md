@@ -19,7 +19,7 @@
 | 02 | Autenticação + RBAC + gestão de usuários | 🟢 |
 | 03 | Módulo Leads (kanban, anotações, anexos) | 🟢 |
 | 04 | Módulo Clientes (conversão, atendimentos, linha do tempo) | 🟢 |
-| 05 | Hardening + Deploy do MVP | ⚪ |
+| 05 | Hardening + Deploy do MVP | 🔵 |
 
 ---
 
@@ -306,10 +306,59 @@ modal com Informações, Editar, Anotações, Anexos, **Atendimentos** e **Linha
 
 # Entrega 05 — Hardening + Deploy
 
-- [ ] Decidir hospedagem (ADR-004)
-- [ ] Backups do banco
-- [ ] Monitoramento de erros
-- [ ] Pentest final do MVP
+## Objetivo
+
+Colocar o MVP no ar **sem custo** (Netlify Free + Neon Free), com os itens de segurança obrigatórios antes da exposição
+pública, backup e um guia de deploy que o dono do produto consiga seguir. Detalhes: [`docs/deployment.md`](docs/deployment.md).
+
+## Escopo
+
+- Hospedagem decidida (ADR-004) e configurada por código (`netlify.toml`)
+- IP confiável da plataforma no rate limit + limite de tentativas de login **por conta**
+- Conexões do Neon (pooler no app, direta nas migrations) e migrations automáticas no build
+- Liveness sem banco (monitor de uptime não gasta a cota do Neon)
+- Backup diário criptografado + alerta de armazenamento + restauração testada
+- Anexos: limite reduzido para 4 MB (limite de 6 MB por requisição da Netlify Free)
+
+## Fora do escopo
+
+- CSP com nonce (continua no tech debt), domínio próprio, Sentry/APM (logs da Netlify bastam agora)
+
+## Tasks
+
+### Development
+
+- [x] ADR-004 (Netlify + Neon) + `docs/deployment.md`
+- [x] `AUTH_IP_HEADER` (obrigatória em produção) → `advanced.ipAddress.ipAddressHeaders`
+- [x] Limite por conta: 10 tentativas / 15 min, contador atômico, chave = SHA-256 do e-mail (migration 0005)
+- [x] `drizzle.config` com `DATABASE_URL_UNPOOLED`; `idle_timeout` nas conexões
+- [x] `/api/health/live`
+- [x] `netlify.toml` (migrations + build; previews/branch deploys bloqueados)
+- [x] Workflow `backup.yml` (pg_dump → AES-256 → artifact 14 dias; alerta > 400 MB)
+- [x] Anexos 4 MB (constante única; UI, HTTP e service)
+- [ ] Deploy de produção (dono do produto: contas, variáveis, primeiro admin)
+
+### QA
+
+- [x] Integração: limite por conta (IPs diferentes, senha certa bloqueada, normalização do e-mail, paralelo, janela, sem e-mail em texto)
+- [x] Integração: `X-Forwarded-For` forjado não fura o limite com o cabeçalho da plataforma
+- [x] Mutation check dos dois controles
+- [x] Backup → criptografia → restauração testados localmente
+- [ ] Smoke test no ambiente publicado
+
+### Security
+
+- [x] Security review do diff
+- [ ] Pentest no ambiente publicado (IP forjado, cabeçalhos, cookie `Secure`, rotas bloqueadas, CSP)
+
+### Git
+
+- [x] Branch `chore/deploy-netlify` · [ ] Commits · [ ] PR
+
+### Definition of Done
+
+- [ ] App no ar em `https://<site>.netlify.app` com admin criado
+- [ ] Pentest em produção sem achados abertos · [ ] CI verde · [x] Docs
 
 ---
 
@@ -328,7 +377,9 @@ modal com Informações, Editar, Anotações, Anexos, **Atendimentos** e **Linha
 | IMPROVEMENT | Menu lateral estilo dashboard (sidebar recolhível, gaveta no celular, menu da conta) — `feature/sidebar-layout` | Pedido do dono do produto |
 | IMPROVEMENT | Card do lead em modal centralizado + anexos com Visualizar (PDF/imagem/texto) e Baixar — `feature/lead-modal-and-preview` | Pedido do dono do produto |
 | ~~FEATURE~~ | ~~Regras pendentes do dono do produto~~ — decididas em 2026-09-19: anotações e atendimentos editáveis/excluíveis (autor, gestor, admin), arquivado editável e viewer vê tudo "por enquanto" — `feature/edit-notes-and-services` | Entrega 03/04 |
-| SECURITY | **Limite de tentativas de login por conta** (independente de IP) + `trustedProxies` conforme hospedagem: o rate limit por IP pode ser contornado com `X-Forwarded-For` forjado se o servidor ficar exposto sem proxy | Entrega 02 → **obrigatório na Entrega 05** |
+| ~~SECURITY~~ | ~~Limite de tentativas de login por conta + IP confiável conforme hospedagem~~ — feito na Entrega 05 | Entrega 02 |
+| IMPROVEMENT | Anexos maiores que 4 MB (upload direto para armazenamento de objetos ou plano pago) | Entrega 05 |
+| IMPROVEMENT | Monitoramento de erros com alerta (ex.: Sentry grátis) — hoje só logs da Netlify | Entrega 05 |
 | FEATURE | Recuperação de senha por e-mail | Entrega 02 (depende da integração de e-mail) |
 
 ---

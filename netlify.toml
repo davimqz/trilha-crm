@@ -1,0 +1,20 @@
+# Deploy na Netlify (plano Free) — ver docs/deployment.md
+# O adaptador de Next.js (OpenNext) é instalado automaticamente pela Netlify.
+
+[build]
+  # Migrations primeiro (conexão direta do Neon), depois o build. Falha na migration = deploy abortado.
+  command = "pnpm db:migrate && pnpm build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "24"
+  # Não enviar telemetria do Next.js durante o build
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Deploy previews e branch deploys rodariam migrations/funções contra o banco de PRODUÇÃO
+# e consomem créditos do plano gratuito. Desative também na UI (Build & deploy → Branches and deploy contexts).
+[context.deploy-preview]
+  command = "echo 'Deploy previews desativados: usariam o banco de produção.' && exit 1"
+
+[context.branch-deploy]
+  command = "echo 'Branch deploys desativados: usariam o banco de produção.' && exit 1"

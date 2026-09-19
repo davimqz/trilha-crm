@@ -365,8 +365,8 @@ test.describe("pentest: endpoints de anexos e Server Actions", () => {
     const admin = adminContext.request;
     expect((await admin.post(uploadUrl, { headers: { origin: "https://evil.test" }, multipart: { file } })).status()).toBe(403);
 
-    // Acima de 10 MB: recusado pelo Content-Length, antes de ler o corpo
-    const big = Buffer.alloc(10 * 1024 * 1024 + 200 * 1024);
+    // Acima de 4 MB: recusado pelo Content-Length, antes de ler o corpo
+    const big = Buffer.alloc(4 * 1024 * 1024 + 200 * 1024);
     PDF.copy(big);
     const tooBig = await admin.post(uploadUrl, {
       headers: { origin: E2E_BASE_URL },

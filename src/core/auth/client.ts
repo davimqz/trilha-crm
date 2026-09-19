@@ -6,6 +6,6 @@ import { createAuthClient } from "better-auth/react";
 export const authClient = createAuthClient();
 
 export function authErrorMessage(status: number | undefined, fallback: string): string {
-  if (status === 429) return "Muitas tentativas. Aguarde um minuto e tente novamente.";
+  if (status === 429) return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
   return fallback;
 }

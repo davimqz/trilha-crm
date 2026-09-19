@@ -14,7 +14,7 @@ export default async function globalSetup() {
   const { db, close } = createDatabase(process.env.TEST_DATABASE_URL!);
   try {
     await migrate(db, { migrationsFolder: "./drizzle" });
-    await db.execute(sql`truncate table users, verifications, rate_limits cascade`);
+    await db.execute(sql`truncate table users, verifications, rate_limits, login_attempts cascade`);
 
     const passwordHash = await hashPassword(E2E_PASSWORD);
     for (const user of Object.values(E2E_USERS)) {

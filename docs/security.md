@@ -45,10 +45,11 @@
 
 | Risco | Justificativa | Revisar em |
 |---|---|---|
-| CSP com `'unsafe-inline'` em scripts | Guia oficial do Next para apps sem nonce; mitigação completa exige CSP com nonce (renderização dinâmica) | Entrega 05 (Hardening) |
+| CSP com `'unsafe-inline'` em scripts | Guia oficial do Next para apps sem nonce; nonce exige renderização dinâmica em todas as páginas. React escapa conteúdo e o texto rico não aceita HTML (ADR-007) | Tech debt (após o deploy) |
 | GHSA-67mh-4wv8-2f99 (moderado) no `esbuild` antigo usado pelo `drizzle-kit` (aparece em `--prod` porque o `better-auth` declara o `drizzle-kit`) | Só afeta o servidor de desenvolvimento do esbuild, que não usamos; ferramenta de dev, fora do bundle de produção | Quando o drizzle-kit atualizar a dependência |
-| `/api/health` público | Retorna apenas `ok`/`error`; útil para monitoramento. Rate limiting na plataforma de deploy | Entrega 05 |
-| **Rate limit por IP contornável com `X-Forwarded-For` forjado** se o servidor for exposto diretamente (sem proxy que sobrescreva o header) | Na Vercel o header é definido pela plataforma. Em VPS: proxy reverso + `advanced.ipAddress.trustedProxies`. Mitigação completa: limite por conta (e-mail), independente de IP | **Entrega 05 — obrigatório antes do deploy** |
+| `/api/health` e `/api/health/live` públicos | Retornam apenas `ok`/`error`, sem versão nem detalhes; `/live` não toca o banco | — |
+| ~~Rate limit por IP contornável com `X-Forwarded-For` forjado~~ | **Resolvido na Entrega 05:** IP vem de `AUTH_IP_HEADER` (Netlify: `x-nf-client-connection-ip`, obrigatório em produção) + limite por conta | — |
+| Bloqueio temporário de conta: quem sabe o e-mail de alguém pode travar o login dessa pessoa por até 15 min (10 tentativas) | Troca consciente para impedir força bruta distribuída. Uso interno, poucos usuários; o bloqueio expira sozinho | Se houver abuso: CAPTCHA ou 2FA |
 | Usuário inativo com a senha correta recebe `403` (diferente do `401`) | Exige conhecer a senha; a UI mostra mensagem genérica | — |
 | Sessão dura até 7 dias no cookie mesmo com renovação no banco | Sessão é revalidada no banco a cada request; revogação é imediata | — |
 
@@ -94,7 +95,7 @@ Security review do diff completo da branch: nenhuma vulnerabilidade de alta conf
 | Permissões por ação + posse (`update`/`archive` só no próprio lead para `sales`; `*-any` para admin/manager) | `leads/module.ts`, `leads/service.ts` |
 | Lock de linha + checagem de posse com dados do banco em toda escrita | `leads/service.ts` |
 | Anotações em JSON validado por schema estrito; renderização sem `dangerouslySetInnerHTML`; cor só da paleta | `leads/rich-text.ts`, `rich-text-view.tsx` |
-| Anexos: tipo confirmado pelo conteúdo (assinatura) + extensão; 10 MB; 20 por lead; nome higienizado | `leads/file-types.ts`, `leads/service.ts` |
+| Anexos: tipo confirmado pelo conteúdo (assinatura) + extensão; 4 MB (10 MB até a Entrega 05); 20 por lead; nome higienizado | `leads/file-types.ts`, `leads/service.ts` |
 | Upload: mesma origem (`Origin` + `Sec-Fetch-Site`), sessão, `Content-Length` checado antes de ler o corpo | `leads/http.ts` |
 | Download: `attachment`, MIME da allowlist, `nosniff`, CSP `default-src 'none'; sandbox`, `X-Frame-Options: DENY`, `no-store` | `leads/http.ts`, `next.config.ts` |
 | Pré-visualização: só PDF/imagem/texto; `inline`; `X-Frame-Options: SAMEORIGIN` + `frame-ancestors 'self'`; `sandbox` em imagem/texto; texto sempre `text/plain`; Office recusado (415) | `leads/http.ts`, `next.config.ts` |
@@ -113,7 +114,7 @@ Automatizado (`src/modules/leads/__tests__/`, `e2e/leads.spec.ts`):
 | Reatribuição de responsável sem `leads:assign` / para usuário inativo | ✅ bloqueada |
 | Mass assignment (`ownerId`, `archivedAt`) | ✅ rejeitado |
 | XSS em anotação: HTML/script digitado, atributos `style`/`onclick` injetados, cor com CSS | ✅ texto puro; atributos descartados; nenhum script executa |
-| Upload: HTML como `.pdf`, `.html`, `.svg`, executável renomeado, ZIP qualquer como `.docx`, vazio, > 10 MB, 21º anexo, nome `../../` | ✅ recusados/higienizados |
+| Upload: HTML como `.pdf`, `.html`, `.svg`, executável renomeado, ZIP qualquer como `.docx`, vazio, > 10 MB (hoje > 4 MB), 21º anexo, nome `../../` | ✅ recusados/higienizados |
 | Upload sem sessão (401), de outra origem (403), acima do limite (413) | ✅ |
 | Download sem sessão (401); anexo pedido por outro lead (404); headers seguros | ✅ |
 | Busca com `%` e `_` | ✅ tratados como texto |
@@ -168,9 +169,26 @@ Security review do diff: nenhuma vulnerabilidade de alta confiança.
 
 Validação por mutação: liberar a regra de autor faz os testes falharem.
 
+## Entrega 05 — Hardening para o deploy (2026-09-19)
+
+| Controle / teste | Resultado |
+|---|---|
+| IP do cliente vem só do cabeçalho da plataforma (`AUTH_IP_HEADER`, obrigatório em produção); `X-Forwarded-For` forjado ignorado | ✅ 6ª tentativa com XFF diferente a cada vez → 429 |
+| Limite por conta: 10 tentativas / 15 min, mesmo de IPs diferentes e mesmo com a senha certa | ✅ 11ª → 429, sem cookie de sessão |
+| Contador atômico (`insert … on conflict … returning`) | ✅ 20 tentativas em paralelo → exatamente 10 × 401 e 10 × 429 |
+| E-mail normalizado (maiúsculas/espaços) e guardado só como SHA-256 | ✅ |
+| Conta inexistente bloqueia igual (não revela quais e-mails existem) | ✅ |
+| Login com sucesso zera o contador; outras contas não são afetadas | ✅ |
+| Backup: dump criptografado (AES-256) antes de sair do runner; segredo via variável, nunca em argumento; workflow sem gatilho de PR | ✅ revisado |
+| Previews/branch deploys bloqueados no `netlify.toml` (não tocam o banco de produção) | ✅ |
+| Health checks sem detalhes internos e sem cache | ✅ E2E |
+
+Validação por mutação: afrouxar o limite, não zerar o contador após sucesso ou ignorar o cabeçalho confiável faz os testes falharem.
+Security review do diff: nenhuma vulnerabilidade de alta confiança. Pentest no ambiente publicado: pendente (após o primeiro deploy).
+
 ## Roadmap de segurança
 
-- Entrega 05: limite de tentativas de login por conta (independente de IP) e `trustedProxies` conforme a hospedagem.
+- ~~Limite de login por conta e IP confiável conforme a hospedagem~~ — feito na Entrega 05.
 - CSP com nonce.
 - Log de auditoria de alterações.
 - **LGPD / dados sensíveis** (antes de armazenar CPF, dados financeiros ou patrimoniais): base legal e consentimento,

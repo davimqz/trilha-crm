@@ -87,6 +87,13 @@ export const rateLimits = pgTable("rate_limits", {
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
 
+// Tentativas de login por conta (complementa o limite por IP do Better Auth). A chave é o SHA-256 do e-mail normalizado.
+export const loginAttempts = pgTable("login_attempts", {
+  key: text("key").primaryKey(),
+  attempts: integer("attempts").notNull(),
+  windowStartedAt: timestamp("window_started_at", { withTimezone: true }).notNull(),
+});
+
 export const authSchema = {
   user: users,
   session: sessions,

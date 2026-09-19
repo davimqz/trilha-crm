@@ -5,7 +5,7 @@ import { getEnv } from "@/core/env";
 import { DomainError, NotFoundError } from "@/core/errors";
 import { ForbiddenError } from "@/core/rbac/authorization";
 
-import { ATTACHMENT_MAX_BYTES } from "./constants";
+import { ATTACHMENT_MAX_BYTES, ATTACHMENT_TOO_LARGE_MESSAGE } from "./constants";
 import { previewTypeOf } from "./file-types";
 import { getLeadsService } from "./service";
 
@@ -44,7 +44,7 @@ export async function handleAttachmentUpload(request: Request, leadId: string): 
   const declaredLength = Number(request.headers.get("content-length"));
   if (!Number.isFinite(declaredLength) || declaredLength <= 0) return json(411, "Tamanho do envio não informado.");
   if (declaredLength > ATTACHMENT_MAX_BYTES + MULTIPART_OVERHEAD_BYTES) {
-    return json(413, "O arquivo passa do limite de 10 MB.");
+    return json(413, ATTACHMENT_TOO_LARGE_MESSAGE);
   }
 
   let file: FormDataEntryValue | null;

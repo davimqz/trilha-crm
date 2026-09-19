@@ -4,7 +4,8 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 export function createDatabase(url: string) {
-  const client = postgres(url, { max: 10, connect_timeout: 5 });
+  // idle_timeout fecha conexões ociosas: em serverless a instância fica congelada entre requisições
+  const client = postgres(url, { max: 10, connect_timeout: 10, idle_timeout: 20 });
   const db = drizzle(client, { schema });
   return { db, close: () => client.end() };
 }
