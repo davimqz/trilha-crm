@@ -77,11 +77,18 @@ Page (RSC) ──requireActor() + can()──▶ service.ts
 - Migrations SQL geradas em `drizzle/` (`pnpm db:generate`), revisadas e versionadas.
 - `getDb()` (server-only) mantém uma conexão reaproveitada; `createDatabase(url)` é usado em testes.
 - Local: Docker Compose com `trilha_crm` (dev) e `trilha_crm_test` (integração).
+- Produção: Neon. App usa a URL com pooler (`DATABASE_URL`); migrations usam a direta (`DATABASE_URL_UNPOOLED`). Ver `docs/deployment.md`.
 
 ## Configuração
 
 - Variáveis validadas com Zod em `src/core/env.ts`, lidas sob demanda (o build não exige segredos).
 - `.env` nunca é versionado; `.env.example` documenta as chaves.
+- Em produção `AUTH_IP_HEADER` é obrigatória (IP confiável para o limite de login).
+
+## Deploy
+
+Netlify Free + Neon Free (ADR-004). Build roda migrations antes do `next build`; deploy a cada merge na `main`.
+Passo a passo, limites e backup: [`docs/deployment.md`](deployment.md).
 
 ## Testes
 

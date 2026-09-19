@@ -5,13 +5,15 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 ```text
 .
 ├── .claude/skills/new-module/   Skill: passo a passo para criar um módulo
-├── .github/workflows/ci.yml     CI: lint, typecheck, unit, integração (Postgres), build, audit
+├── .github/workflows/ci.yml     CI: lint, typecheck, unit, integração (Postgres), build, E2E, audit
+├── .github/workflows/backup.yml Backup diário criptografado do banco de produção + alerta de armazenamento
 ├── docker/postgres/init/        SQL executado na 1ª subida do Postgres (cria banco de teste)
 ├── docker-compose.yml           Postgres local (127.0.0.1:5432)
-├── docs/                        architecture, decisions (ADRs), security, este mapa
-├── drizzle/                     Migrations SQL (0000_auth, 0001_leads, 0002_clients + backfill, 0003)
+├── docs/                        architecture, decisions (ADRs), security, deployment, specs, este mapa
+├── drizzle/                     Migrations SQL (0000_auth … 0005_login_attempts)
 ├── e2e/                         Testes Playwright (setup global faz seed e login por papel)
-├── drizzle.config.ts            Config do drizzle-kit
+├── drizzle.config.ts            Config do drizzle-kit (usa DATABASE_URL_UNPOOLED quando existe)
+├── netlify.toml                 Build de produção (migrations + build), previews desativados
 ├── next.config.ts               Headers de segurança (CSP etc.)
 ├── playwright.config.ts         E2E contra `pnpm start` na porta 3300
 ├── scripts/create-admin.ts      Cria o primeiro admin (`pnpm auth:create-admin`)
@@ -25,12 +27,12 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 │   │   │   └── settings/users/    Gestão de usuários (admin)
 │   │   ├── api/auth/[...all]/   Better Auth atrás da allowlist
 │   │   ├── api/leads/[leadId]/attachments/  POST upload · GET [attachmentId] download
-│   │   ├── api/health/route.ts  GET /api/health → 200 ok | 503 error
+│   │   ├── api/health/          GET /api/health (com banco) → 200 ok | 503 · GET /api/health/live (sem banco)
 │   │   └── layout.tsx           Layout raiz (pt-BR)
 │   ├── components/              ui/ (shadcn), form/ (select nativo, option-select, feedback), confirm-dialog, access-denied
 │   ├── core/                    Infraestrutura compartilhada (não depende de módulos)
 │   │   ├── actions/             runAction (erros seguros) e estado de formulário
-│   │   ├── auth/                Better Auth: config, schema, allowlist, DAL de sessão, client
+│   │   ├── auth/                Better Auth: config, schema, allowlist, handler HTTP, limite por conta, DAL de sessão, client
 │   │   ├── db/                  createDatabase, getDb, agregador de schemas
 │   │   ├── errors.ts            DomainError, NotFoundError, ConflictError
 │   │   ├── env.ts               Validação de variáveis de ambiente
@@ -57,7 +59,7 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 | Entry point | Arquivo |
 |---|---|
 | App web | `src/app/layout.tsx`, `src/app/page.tsx` |
-| Health check | `src/app/api/health/route.ts` |
+| Health check | `src/app/api/health/route.ts` (banco) · `live/route.ts` (sem banco) |
 | Auth HTTP | `src/app/api/auth/[...all]/route.ts` |
 | Sessão (DAL) | `src/core/auth/session.ts` |
 | Conexão com banco | `src/core/db/index.ts` (`getDb`) |
@@ -67,7 +69,7 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 
 - `src/core/env.ts`: falha cedo com config inválida sem vazar valores.
 - `src/core/modules/permissions.ts` e `validate-modules.ts`: base do RBAC.
-- `src/core/auth/create-auth.ts` e `allowed-routes.ts`: superfície de autenticação.
+- `src/core/auth/create-auth.ts`, `allowed-routes.ts`, `http-handler.ts` e `login-throttle.ts`: superfície de autenticação.
 - `src/modules/users/service.ts`: gestão de acesso (locks e revalidação do ator).
 - `src/modules/leads/service.ts`: posse e permissões dos leads; `leads/http.ts`: upload/download de anexos.
 - `src/modules/leads/rich-text.ts` + `components/rich-text-view.tsx`: fronteira contra XSS nas anotações.
