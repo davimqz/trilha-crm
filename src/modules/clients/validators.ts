@@ -30,8 +30,7 @@ export const updateClientSchema = z.strictObject({
   ownerId: z.uuid("Responsável inválido.").optional(),
 });
 
-export const addServiceRecordSchema = z.strictObject({
-  clientId,
+const serviceRecordFields = {
   occurredAt: z.iso
     .datetime({ offset: true, message: "Data e hora inválidas." })
     .transform((value) => new Date(value))
@@ -46,7 +45,15 @@ export const addServiceRecordSchema = z.strictObject({
   responsibleId: z.uuid("Responsável inválido."),
   // Mesmo schema seguro das anotações (ADR-007); descrição é opcional
   description: richTextDocSchema.nullable().optional(),
+};
+
+export const addServiceRecordSchema = z.strictObject({ clientId, ...serviceRecordFields });
+export const updateServiceRecordSchema = z.strictObject({
+  clientId,
+  recordId: z.uuid("Atendimento inválido."),
+  ...serviceRecordFields,
 });
+export const serviceRecordRefSchema = z.strictObject({ clientId, recordId: z.uuid("Atendimento inválido.") });
 
 // Filtros vêm da URL: valores inválidos caem no padrão
 export const listClientsSchema = z.object({

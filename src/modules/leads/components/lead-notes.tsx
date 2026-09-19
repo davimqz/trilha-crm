@@ -4,13 +4,12 @@ import { useRef, useTransition } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { formatDateTime } from "@/lib/format";
 
 import { addNoteAction } from "../actions";
 import type { LeadNote } from "../service";
 
+import { NoteItem } from "./note-item";
 import { RichTextEditor, type RichTextEditorHandle } from "./rich-text-editor";
-import { RichTextView } from "./rich-text-view";
 
 type LeadNotesProps = { leadId: string; notes: LeadNote[]; canEdit: boolean };
 
@@ -59,13 +58,7 @@ export function LeadNotes({ leadId, notes, canEdit }: LeadNotesProps) {
           <ol className="grid gap-3">
             {notes.map((note) => (
               <li key={note.id} className="rounded-lg border p-3" data-testid="lead-note">
-                <article>
-                  <header className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-                    <h4 className="text-sm font-semibold">{formatDateTime(note.createdAt)}</h4>
-                    <span className="text-xs text-muted-foreground">{note.authorName}</span>
-                  </header>
-                  <RichTextView doc={note.content} />
-                </article>
+                <NoteItem leadId={leadId} note={note} />
               </li>
             ))}
           </ol>

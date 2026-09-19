@@ -60,7 +60,8 @@ O cliente acrescenta **status associativo**, **atendimentos** e a **linha do tem
   **Responsável** (usuário ativo; padrão: quem registra), **Assunto** (3–150 caracteres), **Descrição** (opcional, texto formatado
   igual às anotações).
 - Lista do mais recente ao mais antigo, com data/hora, tipo, responsável, assunto e descrição.
-- **[Decisão]** Atendimentos não são editados nem excluídos (histórico).
+- Atendimentos podem ser **editados** e **excluídos** pelo **autor** (quem registrou) ou por **gestor/admin**
+  (confirmado 2026-09-19). A linha do tempo registra "Atendimento editado" e "Atendimento excluído" com data, hora e autor.
 
 ## 6. Linha do tempo
 
@@ -117,7 +118,7 @@ viram clientes na migração.
 ## 10. Regras confirmadas na implementação
 
 - Lead **arquivado** não muda de status por nenhum caminho (kanban ou formulário), então não converte nem reverte cliente.
-- **[Em aberto]** Cliente arquivado ainda aceita edição de contato/status associativo (igual a lead arquivado). Confirmar.
+- ✅ Cliente arquivado segue os mesmos mecanismos do lead arquivado: continua editável (confirmado 2026-09-19).
 
 ## 11. Segurança
 

@@ -81,6 +81,10 @@ export const LEAD_EVENT_TYPES = [
   "owner_changed",
   "contact_updated",
   "associative_status_changed",
+  "note_edited",
+  "note_deleted",
+  "service_record_edited",
+  "service_record_deleted",
 ] as const;
 
 export type LeadEventType = (typeof LEAD_EVENT_TYPES)[number];

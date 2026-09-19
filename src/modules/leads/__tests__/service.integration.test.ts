@@ -306,6 +306,59 @@ describe("leads service", () => {
     });
   });
 
+  describe("editar e excluir anotações", () => {
+    async function noteOf(actor: Actor, leadId: string, text: string) {
+      await service.addNote(actor, { leadId, content: noteDoc(text) });
+      const [note] = await service.listNotes(actor, { leadId });
+      return note;
+    }
+
+    it("autor edita e exclui a própria anotação; eventos ficam na linha do tempo", async () => {
+      const { id: leadId } = await createLeadAs(team.sales);
+      const note = await noteOf(team.sales, leadId, "texto original");
+      expect(note.canManage).toBe(true);
+
+      await service.updateNote(team.sales, { leadId, noteId: note.id, content: noteDoc("texto corrigido") });
+      const [edited] = await service.listNotes(team.viewer, { leadId });
+      expect(edited).toMatchObject({ updatedByName: "Vendedor", canManage: false });
+      expect(JSON.stringify(edited.content)).toContain("texto corrigido");
+
+      await service.deleteNote(team.sales, { leadId, noteId: note.id });
+      expect(await service.listNotes(team.viewer, { leadId })).toHaveLength(0);
+      const events = await service.listEvents(team.viewer, { leadId });
+      expect(events[0]).toMatchObject({ type: "note_deleted", fromValue: "texto corrigido", actorName: "Vendedor" });
+      expect(events[1]).toMatchObject({ type: "note_edited" });
+    });
+
+    it("outro comercial e viewer não editam nem excluem; gestor pode", async () => {
+      const { id: leadId } = await createLeadAs(team.sales);
+      const note = await noteOf(team.sales, leadId, "nota do vendedor");
+
+      await expect(service.updateNote(team.sales2, { leadId, noteId: note.id, content: noteDoc("x") })).rejects.toThrow(ForbiddenError);
+      await expect(service.deleteNote(team.sales2, { leadId, noteId: note.id })).rejects.toThrow(ForbiddenError);
+      await expect(service.deleteNote(team.viewer, { leadId, noteId: note.id })).rejects.toThrow(ForbiddenError);
+
+      await service.updateNote(team.manager, { leadId, noteId: note.id, content: noteDoc("ajustada pelo gestor") });
+      await service.deleteNote(team.manager, { leadId, noteId: note.id });
+      expect(await service.listNotes(team.admin, { leadId })).toHaveLength(0);
+    });
+
+    it("IDOR: não altera anotação usando o id de outro lead; conteúdo malicioso é recusado", async () => {
+      const { id: leadA } = await createLeadAs(team.sales);
+      const { id: leadB } = await createLeadAs(team.sales);
+      const note = await noteOf(team.sales, leadA, "nota A");
+
+      await expect(service.updateNote(team.sales, { leadId: leadB, noteId: note.id, content: noteDoc("x") })).rejects.toThrow(NotFoundError);
+      await expect(service.deleteNote(team.sales, { leadId: leadB, noteId: note.id })).rejects.toThrow(NotFoundError);
+      await expect(
+        service.updateNote(team.sales, { leadId: leadA, noteId: note.id, content: { type: "doc", content: [{ type: "html" }] } }),
+      ).rejects.toThrow(ZodError);
+      await expect(
+        service.updateNote(team.sales, { leadId: leadA, noteId: note.id, content: noteDoc("x"), authorId: team.admin.userId }),
+      ).rejects.toThrow(ZodError);
+    });
+  });
+
   describe("anexos", () => {
     it("anexa, lista, baixa e remove", async () => {
       const { id } = await createLeadAs(team.sales);

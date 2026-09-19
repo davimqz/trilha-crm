@@ -48,6 +48,14 @@ export function eventTitle(event: Pick<EventLike, "type" | "fromValue" | "toValu
       return "Dados de contato atualizados";
     case "associative_status_changed":
       return `Status associativo: ${event.fromValue ?? "—"} → ${event.toValue ?? "—"}`;
+    case "note_edited":
+      return "Anotação editada";
+    case "note_deleted":
+      return "Anotação excluída";
+    case "service_record_edited":
+      return `Atendimento editado: ${event.toValue ?? "—"}`;
+    case "service_record_deleted":
+      return `Atendimento excluído: ${event.fromValue ?? "—"}`;
     default:
       return "Evento";
   }
@@ -70,6 +78,8 @@ export function buildTimeline(sources: {
       at: new Date(event.createdAt),
       kind: "event" as const,
       title: eventTitle(event),
+      // Anotação excluída: mostra o trecho do texto apagado
+      description: event.type === "note_deleted" && event.fromValue ? event.fromValue : undefined,
       actor: event.actorName,
     })),
     ...(sources.notes ?? []).map((note) => ({

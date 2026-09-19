@@ -57,6 +57,9 @@ export const leadNotes = pgTable(
     // JSON do ProseMirror validado por schema estrito (ADR-007)
     content: jsonb("content").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Última edição (nulo se nunca editada)
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    updatedBy: uuid("updated_by").references(() => users.id),
   },
   (table) => [index("lead_notes_lead_id_idx").on(table.leadId, table.createdAt)],
 );

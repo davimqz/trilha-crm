@@ -4,7 +4,7 @@ import { and, asc, count, desc, eq, ilike, isNotNull, isNull, sql, type AnyColum
 
 import { users } from "@/core/auth/schema";
 import { getDb } from "@/core/db";
-import type { Database } from "@/core/db/create-database";
+import type { Database, Transaction } from "@/core/db/create-database";
 import { ConflictError, DomainError, NotFoundError, isUniqueViolation } from "@/core/errors";
 import { ForbiddenError, type Actor } from "@/core/rbac/authorization";
 import { can, requirePermission } from "@/modules/authorization";
@@ -14,12 +14,20 @@ import { leads } from "@/modules/leads/schema";
 
 import {
   ASSOCIATIVE_STATUS_LABELS,
+  SERVICE_RECORD_TYPE_LABELS,
   type AssociativeStatus,
   type ClientSort,
   type ServiceRecordType,
 } from "./constants";
 import { clients, clientServiceRecords } from "./schema";
-import { addServiceRecordSchema, clientIdSchema, listClientsSchema, updateClientSchema } from "./validators";
+import {
+  addServiceRecordSchema,
+  clientIdSchema,
+  listClientsSchema,
+  serviceRecordRefSchema,
+  updateClientSchema,
+  updateServiceRecordSchema,
+} from "./validators";
 
 // ---------- DTOs ----------
 
@@ -48,9 +56,14 @@ export type ServiceRecord = {
   type: ServiceRecordType;
   subject: string;
   description: RichTextDoc | null;
+  responsibleId: string;
   responsibleName: string;
   createdByName: string;
   createdAt: Date;
+  updatedAt: Date | null;
+  updatedByName: string | null;
+  // Quem registrou, gestor ou admin podem editar/excluir (revalidado na escrita)
+  canManage: boolean;
 };
 
 // Nome de usuário por subconsulta (evita aliases de `users` em joins; ver docs/architecture.md)
@@ -93,6 +106,10 @@ const rowColumns = {
   updatedAt: clients.updatedAt,
 };
 
+export function canManageServiceRecord(actor: Actor, createdBy: string): boolean {
+  return can(actor, "clients:update-any") || (can(actor, "clients:log-service") && createdBy === actor.userId);
+}
+
 export function clientCapabilitiesFor(actor: Actor, ownerId: string): ClientCapabilities {
   return {
     canEdit: can(actor, "clients:update-any") || (can(actor, "clients:update") && ownerId === actor.userId),
@@ -108,6 +125,23 @@ export function createClientsService({ db }: { db: Database }) {
       associativeStatus: row.associativeStatus as AssociativeStatus,
       canEdit: clientCapabilitiesFor(actor, row.ownerId).canEdit,
     };
+  }
+
+  // recordId + clientId juntos: impede alterar atendimento de outro cliente trocando só um dos ids
+  async function lockServiceRecord(tx: Transaction, clientId: string, recordId: string) {
+    const [record] = await tx
+      .select({
+        createdBy: clientServiceRecords.createdBy,
+        type: clientServiceRecords.type,
+        subject: clientServiceRecords.subject,
+        leadId: clients.leadId,
+      })
+      .from(clientServiceRecords)
+      .innerJoin(clients, eq(clients.id, clientServiceRecords.clientId))
+      .where(and(eq(clientServiceRecords.id, recordId), eq(clientServiceRecords.clientId, clientId)))
+      .for("update");
+    if (!record) throw new NotFoundError("Atendimento não encontrado.");
+    return record;
   }
 
   async function assertClientExists(clientId: string) {
@@ -242,18 +276,75 @@ export function createClientsService({ db }: { db: Database }) {
           type: clientServiceRecords.type,
           subject: clientServiceRecords.subject,
           description: clientServiceRecords.description,
+          responsibleId: clientServiceRecords.responsibleId,
           responsibleName: userNameOf(clientServiceRecords.responsibleId),
+          createdBy: clientServiceRecords.createdBy,
           createdByName: userNameOf(clientServiceRecords.createdBy),
           createdAt: clientServiceRecords.createdAt,
+          updatedAt: clientServiceRecords.updatedAt,
+          updatedByName: sql<string | null>`(select ${users.name} from ${users} where ${users.id} = ${clientServiceRecords.updatedBy})`,
         })
         .from(clientServiceRecords)
         .where(eq(clientServiceRecords.clientId, clientId))
         .orderBy(desc(clientServiceRecords.occurredAt), desc(clientServiceRecords.createdAt));
-      return rows.map((row) => ({
+      return rows.map(({ createdBy, ...row }) => ({
         ...row,
         type: row.type as ServiceRecordType,
         description: (row.description as RichTextDoc | null) ?? null,
+        canManage: canManageServiceRecord(actor, createdBy),
       }));
+    },
+
+    async updateServiceRecord(actor: Actor, input: unknown): Promise<void> {
+      requirePermission(actor, "clients:log-service");
+      const data = updateServiceRecordSchema.parse(input);
+      await db.transaction(async (tx) => {
+        const record = await lockServiceRecord(tx, data.clientId, data.recordId);
+        if (!canManageServiceRecord(actor, record.createdBy)) {
+          throw new ForbiddenError("Só quem registrou, gestores e administradores podem editar este atendimento.");
+        }
+        const [responsible] = await tx
+          .select({ id: users.id })
+          .from(users)
+          .where(and(eq(users.id, data.responsibleId), eq(users.active, true)));
+        if (!responsible) throw new DomainError("Responsável inválido ou inativo.");
+
+        await tx
+          .update(clientServiceRecords)
+          .set({
+            occurredAt: data.occurredAt,
+            type: data.type,
+            subject: data.subject,
+            description: data.description ?? null,
+            responsibleId: data.responsibleId,
+            updatedAt: new Date(),
+            updatedBy: actor.userId,
+          })
+          .where(eq(clientServiceRecords.id, data.recordId));
+        await recordLeadEvents(tx, [
+          { leadId: record.leadId, type: "service_record_edited", actorId: actor.userId, toValue: data.subject },
+        ]);
+      });
+    },
+
+    async deleteServiceRecord(actor: Actor, input: unknown): Promise<void> {
+      requirePermission(actor, "clients:log-service");
+      const { clientId, recordId } = serviceRecordRefSchema.parse(input);
+      await db.transaction(async (tx) => {
+        const record = await lockServiceRecord(tx, clientId, recordId);
+        if (!canManageServiceRecord(actor, record.createdBy)) {
+          throw new ForbiddenError("Só quem registrou, gestores e administradores podem excluir este atendimento.");
+        }
+        await tx.delete(clientServiceRecords).where(eq(clientServiceRecords.id, recordId));
+        await recordLeadEvents(tx, [
+          {
+            leadId: record.leadId,
+            type: "service_record_deleted",
+            actorId: actor.userId,
+            fromValue: `${SERVICE_RECORD_TYPE_LABELS[record.type as ServiceRecordType]} — ${record.subject}`,
+          },
+        ]);
+      });
     },
 
     async addServiceRecord(actor: Actor, input: unknown): Promise<void> {

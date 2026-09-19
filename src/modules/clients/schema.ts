@@ -56,6 +56,9 @@ export const clientServiceRecords = pgTable(
       .notNull()
       .references(() => users.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    // Última edição (nulo se nunca editado)
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    updatedBy: uuid("updated_by").references(() => users.id),
   },
   (table) => [
     check("client_service_records_type_check", sql`${table.type} in (${serviceTypeList})`),

@@ -255,6 +255,36 @@ test.describe("leads (admin)", () => {
     await expect(page.getByTestId("lead-dialog")).toBeVisible();
   });
 
+  test("editar e excluir anotação, com registro na linha do tempo", async ({ page }) => {
+    await page.goto("/leads");
+    await createLead(page, "Prospect", { name: "Quênia Notas", email: "quenia@e2e.test", phone: "11944440000" });
+    await openLead(page, "Quênia Notas");
+    await page.getByRole("tab", { name: /Anotações/ }).click();
+    await page.getByRole("textbox", { name: "Nova anotação" }).click();
+    await page.keyboard.type("Texto com erro de digitaçao");
+    await page.getByRole("button", { name: "Adicionar anotação" }).click();
+    const note = page.getByTestId("lead-note").first();
+    await expect(note).toContainText("digitaçao");
+
+    await note.getByRole("button", { name: "Editar anotação" }).click();
+    const editor = page.getByRole("textbox", { name: "Editar anotação" });
+    await editor.click();
+    await page.keyboard.press("Control+a");
+    await page.keyboard.type("Texto corrigido");
+    await note.getByRole("button", { name: "Salvar" }).click();
+    await expect(note).toContainText("Texto corrigido");
+    await expect(note).toContainText(/Editada em \d{2}\/\d{2}\/\d{4}/);
+
+    await note.getByRole("button", { name: "Excluir anotação" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "Excluir" }).click();
+    await expect(page.getByTestId("lead-note")).toHaveCount(0);
+
+    await page.getByRole("tab", { name: "Linha do tempo" }).click();
+    await expect(page.getByTestId("timeline")).toContainText("Anotação editada");
+    await expect(page.getByTestId("timeline")).toContainText("Anotação excluída");
+    await expect(page.getByTestId("timeline")).toContainText("Texto corrigido");
+  });
+
   test("XSS: HTML digitado na anotação é exibido como texto", async ({ page }) => {
     let dialogOpened = false;
     page.on("dialog", async (dialog) => {

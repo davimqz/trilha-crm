@@ -18,7 +18,7 @@
 | 01 | Foundation | 🟢 |
 | 02 | Autenticação + RBAC + gestão de usuários | 🟢 |
 | 03 | Módulo Leads (kanban, anotações, anexos) | 🟢 |
-| 04 | Módulo Clientes (conversão, atendimentos, linha do tempo) | 🟢 (PR aberto) |
+| 04 | Módulo Clientes (conversão, atendimentos, linha do tempo) | 🟢 |
 | 05 | Hardening + Deploy do MVP | ⚪ |
 
 ---
@@ -327,7 +327,7 @@ modal com Informações, Editar, Anotações, Anexos, **Atendimentos** e **Linha
 | BUG | ~~Clicar no corpo do card não abria o painel (só o nome)~~ — corrigido em `fix/lead-card-click` | Entrega 03 |
 | IMPROVEMENT | Menu lateral estilo dashboard (sidebar recolhível, gaveta no celular, menu da conta) — `feature/sidebar-layout` | Pedido do dono do produto |
 | IMPROVEMENT | Card do lead em modal centralizado + anexos com Visualizar (PDF/imagem/texto) e Baixar — `feature/lead-modal-and-preview` | Pedido do dono do produto |
-| FEATURE | Regras pendentes do dono do produto: editar/excluir anotações, alterar lead arquivado, visibilidade do viewer (spec §12) | Entrega 03 |
+| ~~FEATURE~~ | ~~Regras pendentes do dono do produto~~ — decididas em 2026-09-19: anotações e atendimentos editáveis/excluíveis (autor, gestor, admin), arquivado editável e viewer vê tudo "por enquanto" — `feature/edit-notes-and-services` | Entrega 03/04 |
 | SECURITY | **Limite de tentativas de login por conta** (independente de IP) + `trustedProxies` conforme hospedagem: o rate limit por IP pode ser contornado com `X-Forwarded-For` forjado se o servidor ficar exposto sem proxy | Entrega 02 → **obrigatório na Entrega 05** |
 | FEATURE | Recuperação de senha por e-mail | Entrega 02 (depende da integração de e-mail) |
 
