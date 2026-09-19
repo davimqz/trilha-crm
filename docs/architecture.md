@@ -66,6 +66,9 @@ Page (RSC) ──requireActor() + can()──▶ service.ts
 - **Headers do `next.config.ts` sobrescrevem os do route handler** (ex.: CSP do download). E o `source` não aceita
   grupos de captura `( )?`: use lookaheads negativos encadeados (o servidor nem sobe se a regex for inválida).
 - **Iframe com PDF captura o teclado:** Esc não fecha o diálogo enquanto o foco está no visualizador (use o ✕).
+- **`now()` no Postgres é o início da transação:** eventos gravados na mesma transação ficariam com o mesmo horário.
+  Para ordem cronológica use `clock_timestamp()` (coluna `lead_events.created_at`).
+- **Kanban largo:** colunas distantes não cabem juntas na tela; o dnd-kit rola ao aproximar da borda.
 - **Ordenação por texto:** use a collation ICU `"und-x-icu"` (a imagem Alpine do Postgres não tem locales).
 
 ## Banco de dados

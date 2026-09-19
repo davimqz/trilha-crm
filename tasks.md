@@ -18,7 +18,7 @@
 | 01 | Foundation | 🟢 |
 | 02 | Autenticação + RBAC + gestão de usuários | 🟢 |
 | 03 | Módulo Leads (kanban, anotações, anexos) | 🟢 |
-| 04 | Módulo Clientes (conversão, atendimentos, linha do tempo) | 🔵 |
+| 04 | Módulo Clientes (conversão, atendimentos, linha do tempo) | 🟢 (PR aberto) |
 | 05 | Hardening + Deploy do MVP | ⚪ |
 
 ---
@@ -281,28 +281,28 @@ modal com Informações, Editar, Anotações, Anexos, **Atendimentos** e **Linha
 
 ### Development
 
-- [ ] Schema: `lead_events`, `clients`, `client_service_records` + migration com backfill
-- [ ] Eventos gravados em todas as ações de leads (criar, mover, editar, responsável, arquivar)
-- [ ] Conversão/reversão/reativação na transação do lead; bloqueio de exclusão de lead convertido
-- [ ] Service de clientes (lista, contador, detalhe, editar, atendimentos) + linha do tempo
-- [ ] UI: página Clientes, modal com 6 abas, atendimentos, linha do tempo (também no lead)
-- [ ] Menu "Clientes"
+- [x] Schema: `lead_events`, `clients`, `client_service_records` + migration com backfill
+- [x] Eventos gravados em todas as ações de leads (criar, mover, editar, responsável, arquivar)
+- [x] Conversão/reversão/reativação na transação do lead; bloqueio de exclusão de lead convertido
+- [x] Service de clientes (lista, contador, detalhe, editar, atendimentos) + linha do tempo
+- [x] UI: página Clientes, modal com 6 abas, atendimentos, linha do tempo (também no lead)
+- [x] Menu "Clientes"
 
 ### QA
 
-- [ ] Unit · [ ] Integração · [ ] E2E
+- [x] Unit · [x] Integração · [x] E2E
 
 ### Security
 
-- [ ] Security review · [ ] Pentest
+- [x] Security review · [x] Pentest
 
 ### Git
 
-- [x] Branch `feature/clients` · [ ] Commits · [ ] PR
+- [x] Branch `feature/clients` · [x] Commits · [x] PR
 
 ### Definition of Done
 
-- [ ] Critérios 1–12 · [ ] CI verde · [ ] Docs
+- [x] Critérios 1–12 · [ ] CI verde · [x] Docs
 
 # Entrega 05 — Hardening + Deploy
 

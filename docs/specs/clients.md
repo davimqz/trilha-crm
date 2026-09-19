@@ -114,7 +114,12 @@ viram clientes na migração.
 | Integração | conversão/reversão/reativação na mesma transação; contador de ativos; eventos gravados em cada ação; posse do sales; bloqueio de exclusão; IDOR de cliente/atendimento; data futura |
 | E2E | converter pelo kanban → cliente listado; contador; filtros; linha clicável; lápis; editar; atendimento; linha do tempo; reverter/reativar; viewer sem ações |
 
-## 10. Segurança
+## 10. Regras confirmadas na implementação
+
+- Lead **arquivado** não muda de status por nenhum caminho (kanban ou formulário), então não converte nem reverte cliente.
+- **[Em aberto]** Cliente arquivado ainda aceita edição de contato/status associativo (igual a lead arquivado). Confirmar.
+
+## 11. Segurança
 
 | Ameaça | Mitigação |
 |---|---|

@@ -9,7 +9,7 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 ├── docker/postgres/init/        SQL executado na 1ª subida do Postgres (cria banco de teste)
 ├── docker-compose.yml           Postgres local (127.0.0.1:5432)
 ├── docs/                        architecture, decisions (ADRs), security, este mapa
-├── drizzle/                     Migrations SQL (0000_auth, 0001_leads)
+├── drizzle/                     Migrations SQL (0000_auth, 0001_leads, 0002_clients + backfill, 0003)
 ├── e2e/                         Testes Playwright (setup global faz seed e login por papel)
 ├── drizzle.config.ts            Config do drizzle-kit
 ├── next.config.ts               Headers de segurança (CSP etc.)
@@ -20,6 +20,7 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 │   │   ├── (auth)/login/        Tela de login (pública)
 │   │   ├── (app)/               Área autenticada: layout com menu lateral (app-sidebar.tsx) por papel e página inicial
 │   │   │   ├── leads/             Kanban de leads (estado na URL: q, owner, period, sort, view, lead, tab)
+│   │   │   ├── clients/           Lista de clientes, contador de ativos, modal com atendimentos e linha do tempo
 │   │   │   ├── account/password/  Troca da própria senha
 │   │   │   └── settings/users/    Gestão de usuários (admin)
 │   │   ├── api/auth/[...all]/   Better Auth atrás da allowlist
@@ -41,6 +42,8 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 │   └── modules/                 Módulos de negócio
 │       ├── authorization.ts     can/requirePermission ligados ao registry
 │       ├── registry.ts          Lista de manifestos registrados
+│       ├── clients/             Clientes (extensão de leads, ADR-008): schema, sync (conversão), service, atendimentos,
+│       │                        timeline, actions, components/, __tests__/
 │       ├── leads/               Leads: constants, schema, validators, phone, rich-text, file-types, service,
 │       │                        actions, http (anexos), components/ (board, card, toolbar, sheet, editor…), __tests__/
 │       └── users/               Gestão de usuários (manifesto, validators, service, actions, UI, testes)
@@ -74,5 +77,6 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 
 | Módulo | Pasta | Tabelas | Rotas | Status |
 |---|---|---|---|---|
-| leads | `src/modules/leads` | `leads`, `lead_notes`, `lead_attachments`, `lead_attachment_contents` | `/leads`, `/api/leads/…/attachments` | 🟢 Entrega 03 |
+| clients | `src/modules/clients` | `clients`, `client_service_records` | `/clients` | 🟢 Entrega 04 |
+| leads | `src/modules/leads` | `leads`, `lead_notes`, `lead_attachments`, `lead_attachment_contents`, `lead_events` | `/leads`, `/api/leads/…/attachments` | 🟢 Entrega 03 |
 | users | `src/modules/users` | `users`, `accounts`, `sessions` (em `core/auth/schema.ts`) | `/settings/users` | 🟢 Entrega 02 |
