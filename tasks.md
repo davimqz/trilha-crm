@@ -19,7 +19,7 @@
 | 02 | Autenticação + RBAC + gestão de usuários | 🟢 |
 | 03 | Módulo Leads (kanban, anotações, anexos) | 🟢 |
 | 04 | Módulo Clientes (conversão, atendimentos, linha do tempo) | 🟢 |
-| 05 | Hardening + Deploy do MVP | 🔵 |
+| 05 | Hardening + Deploy do MVP | 🟢 |
 
 ---
 
@@ -336,7 +336,9 @@ pública, backup e um guia de deploy que o dono do produto consiga seguir. Detal
 - [x] `netlify.toml` (migrations + build; previews/branch deploys bloqueados)
 - [x] Workflow `backup.yml` (pg_dump → AES-256 → artifact 14 dias; alerta > 400 MB)
 - [x] Anexos 4 MB (constante única; UI, HTTP e service)
-- [ ] Deploy de produção (dono do produto: contas, variáveis, primeiro admin)
+- [x] Deploy de produção: https://trilha-crm.netlify.app (Netlify + Neon, variáveis secretas, previews desativados, admin criado)
+- [x] Backup ativado no GitHub (secrets + `BACKUP_ENABLED`) e testado manualmente
+- [x] `ignore` no `netlify.toml`: commits só de documentação não gastam créditos
 
 ### QA
 
@@ -344,21 +346,21 @@ pública, backup e um guia de deploy que o dono do produto consiga seguir. Detal
 - [x] Integração: `X-Forwarded-For` forjado não fura o limite com o cabeçalho da plataforma
 - [x] Mutation check dos dois controles
 - [x] Backup → criptografia → restauração testados localmente
-- [ ] Smoke test no ambiente publicado
+- [x] Smoke test no ambiente publicado (health, login, área autenticada)
 
 ### Security
 
 - [x] Security review do diff
-- [ ] Pentest no ambiente publicado (IP forjado, cabeçalhos, cookie `Secure`, rotas bloqueadas, CSP)
+- [x] Pentest no ambiente publicado (IP forjado, cabeçalhos, cookie `Secure`, rotas bloqueadas, CSRF) — tabela em `docs/security.md`
 
 ### Git
 
-- [x] Branch `chore/deploy-netlify` · [ ] Commits · [ ] PR
+- [x] Branch `chore/deploy-netlify` · [x] Commits · [x] PR #9
 
 ### Definition of Done
 
-- [ ] App no ar em `https://<site>.netlify.app` com admin criado
-- [ ] Pentest em produção sem achados abertos · [ ] CI verde · [x] Docs
+- [x] App no ar em https://trilha-crm.netlify.app com admin criado
+- [x] Pentest em produção sem achados abertos · [x] CI verde · [x] Docs
 
 ---
 

@@ -6,6 +6,9 @@
   command = "pnpm db:migrate && pnpm build"
   publish = ".next"
 
+  # Não gasta créditos quando o commit só mexe em documentação
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude,glob)**/*.md'"
+
 [build.environment]
   NODE_VERSION = "24"
   # Não enviar telemetria do Next.js durante o build
