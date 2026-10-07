@@ -171,16 +171,22 @@ describe("clients service", () => {
         name: "Nome Novo",
         email: "novo@x.com",
         phone: "(21) 98765-4321",
+        birthDate: "1985-03-10",
         associativeStatus: "inadimplente",
       });
 
       const lead = await leadsService.getLead(team.viewer, { leadId });
-      expect(lead).toMatchObject({ name: "Nome Novo", email: "novo@x.com", phone: "21987654321" });
+      expect(lead).toMatchObject({ name: "Nome Novo", email: "novo@x.com", phone: "21987654321", birthDate: "1985-03-10" });
       const detail = await clientsService.getClient(team.viewer, { clientId: client.id });
       expect(detail).toMatchObject({ associativeStatus: "inadimplente", updatedByName: "Vendedor", canEdit: false });
       const events = await leadsService.listEvents(team.viewer, { leadId });
       expect(events[0]).toMatchObject({ type: "associative_status_changed", fromValue: "Adimplente", toValue: "Inadimplente" });
-      expect(events.map((event) => event.type)).toContain("contact_updated");
+      expect(detail.birthDate).toBe("1985-03-10");
+      expect(events.map((event) => event.type)).toEqual(
+        expect.arrayContaining(["name_updated", "email_updated", "phone_updated", "birth_date_updated"]),
+      );
+      // Valores pessoais não vão para o histórico
+      expect(events.filter((event) => event.type.endsWith("_updated")).every((event) => !event.fromValue && !event.toValue)).toBe(true);
     });
 
     it("sales não edita cliente de outro responsável; viewer não edita nada", async () => {

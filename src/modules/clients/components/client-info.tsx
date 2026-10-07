@@ -1,4 +1,4 @@
-import { formatDateTime } from "@/lib/format";
+import { formatCivilDate, formatDateTime } from "@/lib/format";
 import { formatPhone } from "@/modules/leads/phone";
 
 import type { ClientDetail } from "../service";
@@ -31,6 +31,7 @@ export function ClientInfo({ client }: { client: ClientDetail }) {
           {formatPhone(client.phone)}
         </a>
       </Field>
+      <Field label="Data de nascimento">{client.birthDate ? formatCivilDate(client.birthDate) : "—"}</Field>
       <Field label="Responsável">{client.ownerName}</Field>
       <Field label="Cliente desde">{formatDateTime(client.convertedAt)}</Field>
       <Field label="Última edição">

@@ -13,10 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { IDLE } from "@/core/actions/action-state";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, todayCivilDate } from "@/lib/format";
 
 import { deleteLeadAction, setArchivedAction, updateLeadAction } from "../actions";
-import { LEAD_NAME_MAX, LEAD_STATUS_LABELS } from "../constants";
+import { BIRTH_DATE_MIN, LEAD_NAME_MAX, LEAD_STATUS_LABELS } from "../constants";
 import { formatPhone } from "../phone";
 import type { AssignableUser, LeadDetail } from "../service";
 
@@ -88,6 +88,13 @@ export function LeadEditForm({ lead, users, onDeleted }: LeadEditFormProps) {
               <Label htmlFor="edit-phone">Telefone com DDD</Label>
               <Input id="edit-phone" name="phone" type="tel" defaultValue={values.phone ?? formatPhone(lead.phone)} required maxLength={25} aria-invalid={!!errors.phone} aria-describedby="edit-phone-error" />
               <FieldError id="edit-phone-error" message={errors.phone} />
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-birth-date">Data de nascimento (opcional)</Label>
+              <Input id="edit-birth-date" name="birthDate" type="date" defaultValue={values.birthDate ?? lead.birthDate ?? ""} min={BIRTH_DATE_MIN} max={todayCivilDate()} aria-invalid={!!errors.birthDate} aria-describedby="edit-birth-date-error" />
+              <FieldError id="edit-birth-date-error" message={errors.birthDate} />
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

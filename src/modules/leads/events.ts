@@ -11,6 +11,25 @@ export type LeadEventInput = {
   toValue?: string | null;
 };
 
+type ContactFields = { name: string; email: string; phone: string; birthDate: string | null };
+
+const CONTACT_EVENTS = [
+  ["name", "name_updated"],
+  ["email", "email_updated"],
+  ["phone", "phone_updated"],
+  ["birthDate", "birth_date_updated"],
+] as const satisfies readonly (readonly [keyof ContactFields, LeadEventType])[];
+
+// Um evento por campo alterado. Só o tipo: valores pessoais (e-mail, telefone, nascimento) não vão para o histórico
+export function contactChangeEvents(
+  leadId: string,
+  actorId: string,
+  before: ContactFields,
+  after: ContactFields,
+): LeadEventInput[] {
+  return CONTACT_EVENTS.filter(([field]) => before[field] !== after[field]).map(([, type]) => ({ leadId, type, actorId }));
+}
+
 // Sempre chamado dentro da transação da ação: o evento só existe se a ação for confirmada (ADR-008)
 export async function recordLeadEvents(tx: Transaction, events: LeadEventInput[]): Promise<void> {
   if (events.length === 0) return;

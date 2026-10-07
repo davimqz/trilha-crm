@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IDLE } from "@/core/actions/action-state";
-import { formatDateTime } from "@/lib/format";
-import { LEAD_NAME_MAX } from "@/modules/leads/constants";
+import { formatDateTime, todayCivilDate } from "@/lib/format";
+import { BIRTH_DATE_MIN, LEAD_NAME_MAX } from "@/modules/leads/constants";
 import { formatPhone } from "@/modules/leads/phone";
 import type { AssignableUser } from "@/modules/leads/service";
 
@@ -58,6 +58,13 @@ export function ClientEditForm({ client, users }: { client: ClientDetail; users:
               <Label htmlFor="client-phone">Telefone com DDD</Label>
               <Input id="client-phone" name="phone" type="tel" defaultValue={values.phone ?? formatPhone(client.phone)} maxLength={25} aria-invalid={!!errors.phone} aria-describedby="client-phone-error" />
               <FieldError id="client-phone-error" message={errors.phone} />
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="client-birth-date">Data de nascimento (opcional)</Label>
+              <Input id="client-birth-date" name="birthDate" type="date" defaultValue={values.birthDate ?? client.birthDate ?? ""} min={BIRTH_DATE_MIN} max={todayCivilDate()} aria-invalid={!!errors.birthDate} aria-describedby="client-birth-date-error" />
+              <FieldError id="client-birth-date-error" message={errors.birthDate} />
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">

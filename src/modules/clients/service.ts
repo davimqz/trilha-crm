@@ -8,7 +8,7 @@ import type { Database, Transaction } from "@/core/db/create-database";
 import { ConflictError, DomainError, NotFoundError, isUniqueViolation } from "@/core/errors";
 import { ForbiddenError, type Actor } from "@/core/rbac/authorization";
 import { can, requirePermission } from "@/modules/authorization";
-import { recordLeadEvents, type LeadEventInput } from "@/modules/leads/events";
+import { contactChangeEvents, recordLeadEvents, type LeadEventInput } from "@/modules/leads/events";
 import type { RichTextDoc } from "@/modules/leads/rich-text";
 import { leads } from "@/modules/leads/schema";
 
@@ -39,6 +39,7 @@ export type ClientRow = {
   name: string;
   email: string;
   phone: string;
+  birthDate: string | null;
   ownerId: string;
   ownerName: string;
   associativeStatus: AssociativeStatus;
@@ -98,6 +99,7 @@ const rowColumns = {
   name: leads.name,
   email: leads.email,
   phone: leads.phone,
+  birthDate: leads.birthDate,
   ownerId: leads.ownerId,
   ownerName: userNameOf(leads.ownerId),
   associativeStatus: clients.associativeStatus,
@@ -210,7 +212,7 @@ export function createClientsService({ db }: { db: Database }) {
 
           // Dados de contato e responsável vivem no lead (ADR-008): trava o lead e confere a posse com dados do banco
           const [lead] = await tx
-            .select({ ownerId: leads.ownerId, name: leads.name, email: leads.email, phone: leads.phone })
+            .select({ ownerId: leads.ownerId, name: leads.name, email: leads.email, phone: leads.phone, birthDate: leads.birthDate })
             .from(leads)
             .where(eq(leads.id, client.leadId))
             .for("update");
@@ -233,9 +235,7 @@ export function createClientsService({ db }: { db: Database }) {
             events.push({ leadId, type: "owner_changed", actorId: actor.userId, fromValue: previous?.name, toValue: target.name });
             nextOwnerId = ownerId;
           }
-          if (contact.name !== lead.name || contact.email !== lead.email || contact.phone !== lead.phone) {
-            events.push({ leadId, type: "contact_updated", actorId: actor.userId });
-          }
+          events.push(...contactChangeEvents(leadId, actor.userId, lead, contact));
           if (associativeStatus !== client.associativeStatus) {
             events.push({
               leadId,

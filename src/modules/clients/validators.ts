@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { LEAD_SEARCH_MAX } from "@/modules/leads/constants";
 import { richTextDocSchema } from "@/modules/leads/rich-text";
-import { leadEmailSchema, leadNameSchema, leadPhoneSchema } from "@/modules/leads/validators";
+import { leadBirthDateSchema, leadEmailSchema, leadNameSchema, leadPhoneSchema } from "@/modules/leads/validators";
 
 import {
   ASSOCIATIVE_STATUSES,
@@ -20,12 +20,13 @@ const FUTURE_TOLERANCE_MS = 2 * 60 * 1000;
 
 export const clientIdSchema = z.strictObject({ clientId });
 
-// strictObject: leadId, archivedAt, convertedAt nunca vêm do cliente. Nome/e-mail/telefone são do lead (ADR-008)
+// strictObject: leadId, archivedAt, convertedAt nunca vêm do cliente. Nome/e-mail/telefone/nascimento são do lead (ADR-008)
 export const updateClientSchema = z.strictObject({
   clientId,
   name: leadNameSchema,
   email: leadEmailSchema,
   phone: leadPhoneSchema,
+  birthDate: leadBirthDateSchema,
   associativeStatus,
   ownerId: z.uuid("Responsável inválido.").optional(),
 });

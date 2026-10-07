@@ -11,7 +11,26 @@ describe("createLeadSchema", () => {
     expect(createLeadSchema.parse({ ...valid, name: " Ana Souza ", email: " ANA@Exemplo.com " })).toEqual({
       ...valid,
       phone: "11912345678",
+      birthDate: null,
     });
+  });
+
+  it("data de nascimento opcional: vazia ou ausente vira null; válida passa", () => {
+    expect(createLeadSchema.parse({ ...valid, birthDate: "" }).birthDate).toBeNull();
+    expect(createLeadSchema.parse(valid).birthDate).toBeNull();
+    expect(createLeadSchema.parse({ ...valid, birthDate: "1990-05-20" }).birthDate).toBe("1990-05-20");
+    expect(createLeadSchema.parse({ ...valid, birthDate: "2000-02-29" }).birthDate).toBe("2000-02-29");
+  });
+
+  it.each([
+    ["formato brasileiro", "20/05/1990"],
+    ["dia inexistente", "2026-02-30"],
+    ["ano não bissexto", "2023-02-29"],
+    ["antes de 1900", "1899-12-31"],
+    ["no futuro", "2999-01-01"],
+    ["texto qualquer", "<script>"],
+  ])("rejeita data de nascimento: %s", (_, birthDate) => {
+    expect(createLeadSchema.safeParse({ ...valid, birthDate }).success).toBe(false);
   });
 
   it.each([

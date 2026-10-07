@@ -25,13 +25,14 @@ export async function updateClientAction(_previous: ActionResult, formData: Form
       name: formString(formData, "name"),
       email: formString(formData, "email"),
       phone: formString(formData, "phone"),
+      birthDate: formString(formData, "birthDate"),
       associativeStatus: formString(formData, "associativeStatus"),
       ...(ownerId ? { ownerId } : {}),
     });
     return "Alterações salvas.";
   });
   if (result.status === "success") revalidate();
-  return withSubmittedValues(result, formData, ["name", "email", "phone", "associativeStatus", "ownerId"]);
+  return withSubmittedValues(result, formData, ["name", "email", "phone", "birthDate", "associativeStatus", "ownerId"]);
 }
 
 export async function addServiceRecordAction(input: unknown): Promise<ActionResult> {

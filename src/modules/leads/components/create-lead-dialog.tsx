@@ -10,9 +10,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { IDLE, type ActionResult } from "@/core/actions/action-state";
+import { todayCivilDate } from "@/lib/format";
 
 import { createLeadAction } from "../actions";
-import { LEAD_NAME_MAX, LEAD_STATUS_LABELS, type LeadCreateStatus } from "../constants";
+import { BIRTH_DATE_MIN, LEAD_NAME_MAX, LEAD_STATUS_LABELS, type LeadCreateStatus } from "../constants";
 
 // Montado dentro do diálogo: ao fechar, o estado (erros, campos) é descartado
 function CreateLeadForm({ status, onCreated }: { status: LeadCreateStatus; onCreated: () => void }) {
@@ -59,6 +60,20 @@ function CreateLeadForm({ status, onCreated }: { status: LeadCreateStatus; onCre
         />
         <FieldError id={`${prefix}-phone-error`} message={errors.phone} />
       </div>
+      <div className="grid gap-2">
+        <Label htmlFor={`${prefix}-birth-date`}>Data de nascimento (opcional)</Label>
+        <Input
+          id={`${prefix}-birth-date`}
+          name="birthDate"
+          type="date"
+          defaultValue={values.birthDate}
+          min={BIRTH_DATE_MIN}
+          max={todayCivilDate()}
+          aria-invalid={!!errors.birthDate}
+          aria-describedby={`${prefix}-birth-date-error`}
+        />
+        <FieldError id={`${prefix}-birth-date-error`} message={errors.birthDate} />
+      </div>
       <DialogFooter>
         <Button type="submit" disabled={pending}>
           {pending ? "Cadastrando…" : "Cadastrar"}
@@ -83,7 +98,7 @@ export function CreateLeadDialog({ status }: { status: LeadCreateStatus }) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Novo lead — {LEAD_STATUS_LABELS[status]}</DialogTitle>
-          <DialogDescription>Todos os campos são obrigatórios.</DialogDescription>
+          <DialogDescription>Todos os campos são obrigatórios, exceto a data de nascimento.</DialogDescription>
         </DialogHeader>
         {open && <CreateLeadForm status={status} onCreated={() => setOpen(false)} />}
       </DialogContent>

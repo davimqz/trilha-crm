@@ -19,7 +19,7 @@ import {
   type LeadSort,
   type LeadStatus,
 } from "./constants";
-import { recordLeadEvents, type LeadEventInput } from "./events";
+import { contactChangeEvents, recordLeadEvents, type LeadEventInput } from "./events";
 import { ATTACHMENT_KINDS, detectAttachmentKind, sanitizeFileName, type AttachmentKind } from "./file-types";
 import { plainText, type RichTextDoc } from "./rich-text";
 import { excerpt } from "./timeline";
@@ -46,6 +46,8 @@ export type LeadCard = {
   name: string;
   email: string;
   phone: string;
+  // "AAAA-MM-DD" ou null
+  birthDate: string | null;
   status: LeadStatus;
   ownerId: string;
   ownerName: string;
@@ -106,6 +108,7 @@ const cardColumns = {
   name: leads.name,
   email: leads.email,
   phone: leads.phone,
+  birthDate: leads.birthDate,
   status: leads.status,
   ownerId: leads.ownerId,
   ownerName: userNameOf(leads.ownerId),
@@ -168,6 +171,7 @@ export function createLeadsService({ db }: { db: Database }) {
         name: leads.name,
         email: leads.email,
         phone: leads.phone,
+        birthDate: leads.birthDate,
       })
       .from(leads)
       .where(eq(leads.id, leadId))
@@ -291,9 +295,7 @@ export function createLeadsService({ db }: { db: Database }) {
             events.push({ leadId, type: "owner_changed", actorId: actor.userId, fromValue: previous?.name, toValue: target.name });
             nextOwnerId = ownerId;
           }
-          if (data.name !== lead.name || data.email !== lead.email || data.phone !== lead.phone) {
-            events.push({ leadId, type: "contact_updated", actorId: actor.userId });
-          }
+          events.push(...contactChangeEvents(leadId, actor.userId, lead, data));
 
           await tx
             .update(leads)
