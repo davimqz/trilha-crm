@@ -16,7 +16,7 @@ import { IDLE } from "@/core/actions/action-state";
 import { formatDateTime } from "@/lib/format";
 
 import { deleteLeadAction, setArchivedAction, updateLeadAction } from "../actions";
-import { LEAD_NAME_MAX, LEAD_STATUS_LABELS, LEAD_STATUSES } from "../constants";
+import { LEAD_NAME_MAX, LEAD_STATUS_LABELS } from "../constants";
 import { formatPhone } from "../phone";
 import type { AssignableUser, LeadDetail } from "../service";
 
@@ -91,15 +91,13 @@ export function LeadEditForm({ lead, users, onDeleted }: LeadEditFormProps) {
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
+            {/* Status só leitura: reflete a coluna atual do kanban (muda arrastando o card) */}
             <div className="grid gap-2">
               <Label htmlFor="edit-status">Status</Label>
-              <NativeSelect id="edit-status" name="status" defaultValue={values.status ?? lead.status}>
-                {LEAD_STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {LEAD_STATUS_LABELS[status]}
-                  </option>
-                ))}
-              </NativeSelect>
+              <Input id="edit-status" value={LEAD_STATUS_LABELS[lead.status]} readOnly disabled aria-describedby="edit-status-hint" />
+              <p id="edit-status-hint" className="text-xs text-muted-foreground">
+                Para mudar, arraste o card no kanban.
+              </p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="edit-owner">Responsável</Label>

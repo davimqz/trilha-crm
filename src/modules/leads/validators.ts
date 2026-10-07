@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  LEAD_CREATE_STATUSES,
   LEAD_NAME_MAX,
   LEAD_PERIODS,
   LEAD_SEARCH_MAX,
@@ -40,14 +41,19 @@ const email = leadEmailSchema;
 const phone = leadPhoneSchema;
 
 // strictObject: ownerId, archivedAt, createdBy etc. nunca vêm do cliente
-export const createLeadSchema = z.strictObject({ name, email, phone, status });
+export const createLeadSchema = z.strictObject({
+  name,
+  email,
+  phone,
+  status: z.enum(LEAD_CREATE_STATUSES, "Leads só podem ser cadastrados em Prospect ou Primeiro Contato."),
+});
 
+// Sem status: o estágio é a coluna do kanban e só muda pelo moveLead
 export const updateLeadSchema = z.strictObject({
   leadId,
   name,
   email,
   phone,
-  status,
   // Só aplicado se o ator tiver `leads:assign` (checado no service)
   ownerId: z.uuid("Responsável inválido.").optional(),
 });

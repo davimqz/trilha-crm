@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 import { moveLeadAction } from "../actions";
-import { LEAD_STATUS_LABELS, LEAD_STATUSES, type LeadStatus } from "../constants";
+import { LEAD_CREATE_STATUSES, LEAD_STATUS_LABELS, LEAD_STATUSES, type LeadCreateStatus, type LeadStatus } from "../constants";
 import type { LeadCard as LeadCardData } from "../service";
 
 import { CreateLeadDialog } from "./create-lead-dialog";
@@ -29,6 +29,7 @@ import { useLeadsUrl } from "./use-leads-url";
 type LeadsBoardProps = { leads: LeadCardData[]; canCreate: boolean; filtered: boolean };
 
 const isStatus = (value: unknown): value is LeadStatus => LEAD_STATUSES.includes(value as LeadStatus);
+const isCreateStatus = (status: LeadStatus): status is LeadCreateStatus => LEAD_CREATE_STATUSES.includes(status as LeadCreateStatus);
 
 function Column({
   status,
@@ -69,7 +70,7 @@ function Column({
           </li>
         ))}
       </ul>
-      {canCreate && <CreateLeadDialog status={status} />}
+      {canCreate && isCreateStatus(status) && <CreateLeadDialog status={status} />}
     </section>
   );
 }
@@ -140,7 +141,7 @@ export function LeadsBoard({ leads, canCreate, filtered }: LeadsBoardProps) {
       )}
       {!filtered && optimisticLeads.length === 0 && (
         <p className="mb-3 text-sm text-muted-foreground">
-          Nenhum lead ainda.{canCreate ? " Use + em uma coluna para cadastrar." : ""}
+          Nenhum lead ainda.{canCreate ? " Use + em Prospect ou Primeiro Contato para cadastrar." : ""}
         </p>
       )}
       <div className="flex gap-3 overflow-x-auto pb-4" data-testid="leads-board">

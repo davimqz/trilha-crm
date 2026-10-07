@@ -45,12 +45,11 @@ export async function updateLeadAction(_previous: ActionResult, formData: FormDa
       name: formString(formData, "name"),
       email: formString(formData, "email"),
       phone: formString(formData, "phone"),
-      status: formString(formData, "status"),
       ...(ownerId ? { ownerId } : {}),
     });
     return "Alterações salvas.";
   });
-  return withSubmittedValues(result, formData, ["name", "email", "phone", "status", "ownerId"]);
+  return withSubmittedValues(result, formData, ["name", "email", "phone", "ownerId"]);
 }
 
 export async function moveLeadAction(leadId: unknown, status: unknown): Promise<ActionResult> {

@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { createLeadSchema, listLeadsSchema, moveLeadSchema, updateLeadSchema } from "../validators";
 
-const valid = { name: "Ana Souza", email: "ana@exemplo.com", phone: "(11) 91234-5678", status: "prospect" };
+const contact = { name: "Ana Souza", email: "ana@exemplo.com", phone: "(11) 91234-5678" };
+const valid = { ...contact, status: "prospect" };
 const LEAD_ID = "3f2b8c1e-6d4a-4f7b-9c2e-1a5d8e7f6b3c";
 
 describe("createLeadSchema", () => {
@@ -19,6 +20,8 @@ describe("createLeadSchema", () => {
     ["e-mail inválido", { email: "ana@" }],
     ["telefone sem DDD", { phone: "91234-5678" }],
     ["status inexistente", { status: "won" }],
+    ["estágio fora de Prospect/Primeiro Contato", { status: "meeting_scheduled" }],
+    ["cadastro direto em Convertido", { status: "converted" }],
   ])("rejeita %s", (_, override) => {
     expect(createLeadSchema.safeParse({ ...valid, ...override }).success).toBe(false);
   });
@@ -29,10 +32,16 @@ describe("createLeadSchema", () => {
 });
 
 describe("updateLeadSchema / moveLeadSchema", () => {
+  it("aceita Primeiro Contato no cadastro", () => {
+    expect(createLeadSchema.safeParse({ ...valid, status: "first_contact" }).success).toBe(true);
+  });
+
   it("aceita ownerId opcional e exige leadId UUID", () => {
-    expect(updateLeadSchema.safeParse({ ...valid, leadId: LEAD_ID }).success).toBe(true);
-    expect(updateLeadSchema.safeParse({ ...valid, leadId: LEAD_ID, ownerId: LEAD_ID }).success).toBe(true);
-    expect(updateLeadSchema.safeParse({ ...valid, leadId: "1 or 1=1" }).success).toBe(false);
+    expect(updateLeadSchema.safeParse({ ...contact, leadId: LEAD_ID }).success).toBe(true);
+    expect(updateLeadSchema.safeParse({ ...contact, leadId: LEAD_ID, ownerId: LEAD_ID }).success).toBe(true);
+    expect(updateLeadSchema.safeParse({ ...contact, leadId: "1 or 1=1" }).success).toBe(false);
+    // Status não se edita no formulário: só pelo kanban (moveLead)
+    expect(updateLeadSchema.safeParse({ ...valid, leadId: LEAD_ID }).success).toBe(false);
     expect(moveLeadSchema.safeParse({ leadId: LEAD_ID, status: "hacked" }).success).toBe(false);
   });
 });

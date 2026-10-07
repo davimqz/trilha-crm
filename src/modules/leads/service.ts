@@ -262,8 +262,6 @@ export function createLeadsService({ db }: { db: Database }) {
             .values({ ...data, ownerId: actor.userId, createdBy: actor.userId, updatedBy: actor.userId })
             .returning({ id: leads.id });
           await recordLeadEvents(tx, [{ leadId: created.id, type: "created", actorId: actor.userId, toValue: data.status }]);
-          // Cadastrado direto na coluna "Convertido" também vira cliente
-          await applyStatusChange(tx, actor, created.id, null, data.status);
           return created;
         });
       } catch (error) {
@@ -279,11 +277,6 @@ export function createLeadsService({ db }: { db: Database }) {
         await db.transaction(async (tx) => {
           const lead = await lockLead(tx, leadId);
           assertCanEdit(actor, lead.ownerId);
-
-          // Mesma regra do kanban (moveLead): lead arquivado não muda de estágio (nem converte/reverte cliente)
-          if (lead.archivedAt && data.status !== lead.status) {
-            throw new DomainError("Desarquive o lead antes de mudar o status.");
-          }
 
           let nextOwnerId = lead.ownerId;
           const events: LeadEventInput[] = [];
@@ -307,7 +300,6 @@ export function createLeadsService({ db }: { db: Database }) {
             .set({ ...data, ownerId: nextOwnerId, updatedBy: actor.userId, updatedAt: new Date() })
             .where(eq(leads.id, leadId));
           await recordLeadEvents(tx, events);
-          await applyStatusChange(tx, actor, leadId, lead.status, data.status);
         });
       } catch (error) {
         rethrowDuplicateEmail(error);
