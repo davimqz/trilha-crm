@@ -56,6 +56,11 @@ test.describe("leads (admin)", () => {
       "Não convertido",
     ]);
 
+    // "+" só em Prospect e Primeiro Contato; os demais estágios recebem leads só pelo arraste
+    await expect(page.getByRole("button", { name: /Adicionar lead em/ })).toHaveCount(2);
+    await expect(page.getByRole("button", { name: "Adicionar lead em Prospect" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Adicionar lead em Primeiro Contato" })).toBeVisible();
+
     await createLead(page, "Primeiro Contato", { name: "Fernanda Rocha", email: "fernanda@e2e.test", phone: "(11) 98888-7777" });
     await expect(page.getByTestId("column-first_contact").getByTestId("lead-card-fernanda@e2e.test")).toContainText("(11) 98888-7777");
   });
@@ -131,7 +136,9 @@ test.describe("leads (admin)", () => {
     // Editar
     await page.getByRole("tab", { name: "Editar" }).click();
     await page.getByLabel("Nome", { exact: true }).fill("Joana Editada");
-    await page.getByLabel("Status").selectOption("meeting_done");
+    // Status é só leitura: vem da coluna atual do kanban
+    await expect(page.getByLabel("Status")).toHaveValue("Prospect");
+    await expect(page.getByLabel("Status")).toBeDisabled();
     await page.getByRole("button", { name: "Salvar" }).click();
     await expect(page.getByText("Alterações salvas.")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Joana Editada" })).toBeVisible();

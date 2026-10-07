@@ -7,32 +7,38 @@ async function activeCount(page: Page) {
   return Number(text.replace(/\D/g, ""));
 }
 
-// Cadastra na coluna "Não convertido" (última) e arrasta para "Convertido" (vizinha, ambas visíveis)
+// Arrasta o card até a coluna (viewport largo: todas as colunas do kanban ficam visíveis)
+async function dragToColumn(page: Page, email: string, status: string) {
+  const card = page.getByTestId(`lead-card-${email}`);
+  const from = (await card.boundingBox())!;
+  const to = (await page.getByTestId(`column-${status}`).boundingBox())!;
+  const y = from.y + from.height - 8;
+  // O card muda de coluna na hora (otimista): espera a Server Action responder antes de seguir
+  const saved = page.waitForResponse((response) => response.request().method() === "POST" && !!response.request().headers()["next-action"]);
+  await page.mouse.move(from.x + from.width / 2, y);
+  await page.mouse.down();
+  await page.mouse.move(from.x + from.width / 2 + 15, y, { steps: 5 });
+  await page.mouse.move(to.x + to.width / 2, y, { steps: 15 });
+  await page.mouse.up();
+  await saved;
+  await expect(page.getByTestId(`column-${status}`).getByTestId(`lead-card-${email}`)).toBeVisible();
+}
+
+// Cadastra em "Prospect" (só Prospect e Primeiro Contato têm +) e arrasta para "Convertido"
 async function createAndConvertByDrag(page: Page, lead: { name: string; email: string; phone: string }) {
   await page.goto("/leads");
-  const board = page.getByTestId("leads-board");
-  await board.evaluate((element) => (element.scrollLeft = element.scrollWidth));
-
-  await page.getByRole("button", { name: "Adicionar lead em Não convertido" }).click();
+  await page.getByRole("button", { name: "Adicionar lead em Prospect" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Nome", { exact: true }).fill(lead.name);
   await dialog.getByLabel("E-mail").fill(lead.email);
   await dialog.getByLabel("Telefone com DDD").fill(lead.phone);
   await dialog.getByRole("button", { name: "Cadastrar" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-
-  await board.evaluate((element) => (element.scrollLeft = element.scrollWidth));
-  const card = page.getByTestId(`lead-card-${lead.email}`);
-  const from = (await card.boundingBox())!;
-  const to = (await page.getByTestId("column-converted").boundingBox())!;
-  const y = from.y + from.height - 8;
-  await page.mouse.move(from.x + from.width / 2, y);
-  await page.mouse.down();
-  await page.mouse.move(from.x + from.width / 2 - 15, y, { steps: 5 });
-  await page.mouse.move(to.x + to.width / 2, y, { steps: 15 });
-  await page.mouse.up();
-  await expect(page.getByTestId("column-converted").getByTestId(`lead-card-${lead.email}`)).toBeVisible();
+  await dragToColumn(page, lead.email, "converted");
 }
+
+// Kanban inteiro visível (menu lateral + 7 colunas): o arraste de Prospect até Convertido não depende de rolagem
+test.use({ viewport: { width: 2600, height: 900 } });
 
 async function openClient(page: Page, email: string) {
   await page.getByTestId(`client-row-${email}`).getByText(email).click();
@@ -79,8 +85,8 @@ test.describe("clientes (admin)", () => {
     // Linha do tempo com o histórico completo
     await page.getByRole("tab", { name: "Linha do tempo" }).click();
     const timeline = page.getByTestId("timeline");
-    await expect(timeline).toContainText("Virou lead em Não convertido");
-    await expect(timeline).toContainText("Movido de Não convertido para Convertido");
+    await expect(timeline).toContainText("Virou lead em Prospect");
+    await expect(timeline).toContainText("Movido de Prospect para Convertido");
     await expect(timeline).toContainText("Convertido em cliente");
     await expect(timeline).toContainText("Status associativo: Adimplente → Inadimplente");
     await expect(timeline).toContainText("Atendimento (Ligação): Cobrança da mensalidade");
@@ -116,10 +122,12 @@ test.describe("clientes (admin)", () => {
     await page.getByRole("alertdialog").getByRole("button", { name: "Excluir definitivamente" }).click();
     await expect(page.getByText("Este lead já virou cliente e não pode ser excluído.", { exact: false })).toBeVisible();
 
-    // Desfazer conversão pelo status do lead
-    await page.getByLabel("Status").selectOption("not_converted");
-    await page.getByRole("button", { name: "Salvar" }).click();
-    await expect(page.getByText("Alterações salvas.")).toBeVisible();
+    // Status não se edita no formulário; desfazer a conversão é arrastando o card
+    await expect(page.getByLabel("Status")).toHaveValue("Convertido");
+    await expect(page.getByLabel("Status")).toBeDisabled();
+    await page.getByRole("dialog").getByRole("button", { name: "Fechar" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await dragToColumn(page, "rafael@e2e.test", "not_converted");
 
     await page.goto("/clients");
     await expect(page.getByTestId("client-row-rafael@e2e.test")).toHaveCount(0);
