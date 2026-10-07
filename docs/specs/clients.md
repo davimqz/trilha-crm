@@ -65,20 +65,25 @@ O cliente acrescenta **status associativo**, **atendimentos** e a **linha do tem
 
 ## 6. Linha do tempo
 
-Reúne, com **dia e hora** e **quem fez**:
+Formato conciso (pedido do dono do produto em 2026-10-07): **data e hora à esquerda** e, à direita, só um rótulo curto
+ou **"De X Para Y"**. Não mostra quem fez, trechos de anotação, nome de arquivo nem assunto de atendimento.
 
 | Origem | Exemplo |
 |---|---|
-| Criação do lead | "Virou lead em Prospect" |
-| Mudança de coluna | "Movido de Primeiro Contato para Reunião Agendada" |
-| Conversão / reversão | "Convertido em cliente" · "Conversão desfeita — cliente arquivado" · "Cliente reativado" |
-| Arquivar / desarquivar lead | "Lead arquivado" |
-| Responsável | "Responsável alterado de Ana para Bruno" |
-| Dados | "Dados de contato atualizados" · "Status associativo: Adimplente → Inadimplente" |
-| Anotações, anexos, atendimentos | "Anotação adicionada" · "Anexo adicionado: proposta.pdf" · "Atendimento (Reunião): Alinhamento" |
+| Criação do lead | "Lead criado" |
+| Mudança de coluna | "De Primeiro Contato Para Reunião Agendada" |
+| Conversão / reversão | "Convertido em cliente" · "Conversão desfeita" · "Cliente reativado" |
+| Arquivar / desarquivar lead | "Lead arquivado" · "Lead desarquivado" |
+| Responsável | "Responsável: De Ana Para Bruno" |
+| Status associativo | "Status associativo: De Adimplente Para Inadimplente" |
+| Dados (um item por campo alterado) | "Atualização de nome" · "Atualização de e-mail" · "Atualização de telefone" · "Atualização de data de nascimento" |
+| Anotações, anexos, atendimentos | "Anotação adicionada/editada/excluída" · "Anexo adicionado" · "Atendimento registrado/editado/excluído" |
+
+Os eventos de dados não gravam o valor antigo nem o novo (dados pessoais fora do histórico). Eventos antigos
+"Dados de contato atualizados" aparecem como "Atualização de contato".
 
 A linha do tempo também aparece no **modal do lead** **[Decisão]** (mesmo histórico).
-Leads criados antes desta entrega ganham o evento "Virou lead" com a data original de criação; leads já convertidos
+Leads criados antes desta entrega ganham o evento de criação com a data original de criação; leads já convertidos
 viram clientes na migração.
 
 ## 7. Permissões (ADR-003)
