@@ -381,6 +381,7 @@ pública, backup e um guia de deploy que o dono do produto consiga seguir. Detal
 | ~~FEATURE~~ | ~~Regras pendentes do dono do produto~~ — decididas em 2026-09-19: anotações e atendimentos editáveis/excluíveis (autor, gestor, admin), arquivado editável e viewer vê tudo "por enquanto" — `feature/edit-notes-and-services` | Entrega 03/04 |
 | ~~FEATURE~~ | ~~"+" só em Prospect e Primeiro Contato; status do lead só leitura em "Editar" (vem da coluna do kanban)~~ — validado também no servidor — `feature/lead-status-rules` | Pedido do dono do produto (2026-10-07) |
 | ~~SECURITY~~ | ~~Limite de tentativas de login por conta + IP confiável conforme hospedagem~~ — feito na Entrega 05 | Entrega 02 |
+| ~~SECURITY~~ | ~~Auditoria (2026-10-07): RCE crítica em `next/og` (next 16.3.5), `sharp` e `source-map-js`~~ — next 16.3.6, transitivas atualizadas e `shadcn` (CLI + CSS de build) movido para devDependencies — `security/bump-next-16.3.6` | CI do PR #11 |
 | IMPROVEMENT | Anexos maiores que 4 MB (upload direto para armazenamento de objetos ou plano pago) | Entrega 05 |
 | IMPROVEMENT | Monitoramento de erros com alerta (ex.: Sentry grátis) — hoje só logs da Netlify | Entrega 05 |
 | FEATURE | Recuperação de senha por e-mail | Entrega 02 (depende da integração de e-mail) |
