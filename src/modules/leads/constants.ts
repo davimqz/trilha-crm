@@ -22,6 +22,10 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   not_converted: "Não convertido",
 };
 
+// Colunas onde o "+" cadastra lead; nos demais estágios o lead só chega arrastando no kanban
+export const LEAD_CREATE_STATUSES = ["prospect", "first_contact"] as const satisfies readonly LeadStatus[];
+export type LeadCreateStatus = (typeof LEAD_CREATE_STATUSES)[number];
+
 // Abas do painel do lead (valor do parâmetro ?tab= na URL)
 export const LEAD_TABS = ["info", "edit", "notes", "attachments", "timeline"] as const;
 export type LeadTab = (typeof LEAD_TABS)[number];

@@ -12,10 +12,10 @@ import { Label } from "@/components/ui/label";
 import { IDLE, type ActionResult } from "@/core/actions/action-state";
 
 import { createLeadAction } from "../actions";
-import { LEAD_NAME_MAX, LEAD_STATUS_LABELS, type LeadStatus } from "../constants";
+import { LEAD_NAME_MAX, LEAD_STATUS_LABELS, type LeadCreateStatus } from "../constants";
 
 // Montado dentro do diálogo: ao fechar, o estado (erros, campos) é descartado
-function CreateLeadForm({ status, onCreated }: { status: LeadStatus; onCreated: () => void }) {
+function CreateLeadForm({ status, onCreated }: { status: LeadCreateStatus; onCreated: () => void }) {
   const [result, formAction, pending] = useActionState(async (previous: ActionResult, formData: FormData) => {
     const response = await createLeadAction(previous, formData);
     if (response.status === "success") {
@@ -68,7 +68,7 @@ function CreateLeadForm({ status, onCreated }: { status: LeadStatus; onCreated: 
   );
 }
 
-export function CreateLeadDialog({ status }: { status: LeadStatus }) {
+export function CreateLeadDialog({ status }: { status: LeadCreateStatus }) {
   const [open, setOpen] = useState(false);
 
   return (

@@ -94,16 +94,13 @@ describe("clients service", () => {
       ]);
     });
 
-    it("lead cadastrado direto em Convertido também vira cliente", async () => {
-      const { id: leadId } = await createLead(team.sales, "converted");
-      expect(await db.select().from(clients).where(eq(clients.leadId, leadId))).toHaveLength(1);
-      expect(await eventTypes(leadId)).toEqual(["created", "converted"]);
-    });
-
-    it("editar o lead mudando o status para Convertido também converte", async () => {
+    it("não dá para cadastrar lead direto em Convertido nem converter pelo formulário de edição", async () => {
+      await expect(createLead(team.sales, "converted")).rejects.toThrow(ZodError);
       const { id: leadId } = await createLead(team.sales);
-      await leadsService.updateLead(team.sales, { leadId, name: "Pessoa X", email: "px@x.com", phone: "11912345678", status: "converted" });
-      expect(await db.select().from(clients).where(eq(clients.leadId, leadId))).toHaveLength(1);
+      await expect(
+        leadsService.updateLead(team.sales, { leadId, name: "Pessoa X", email: "px@x.com", phone: "11912345678", status: "converted" }),
+      ).rejects.toThrow(ZodError);
+      expect(await db.select().from(clients)).toHaveLength(0);
     });
 
     it("não há como criar cliente manualmente: o service não expõe criação", () => {
@@ -117,12 +114,10 @@ describe("clients service", () => {
       expect(await db.select().from(clients).where(eq(clients.leadId, leadId))).toHaveLength(1);
     });
 
-    it("lead arquivado não muda de status nem pelo formulário (não converte cliente)", async () => {
+    it("lead arquivado não muda de status (não converte cliente)", async () => {
       const { id: leadId } = await createLead(team.sales);
       await leadsService.setArchived(team.sales, { leadId, archived: true });
-      await expect(
-        leadsService.updateLead(team.sales, { leadId, name: "Pessoa", email: "arq@x.com", phone: "11912345678", status: "converted" }),
-      ).rejects.toThrow(DomainError);
+      await expect(leadsService.moveLead(team.sales, { leadId, status: "converted" })).rejects.toThrow(DomainError);
       expect(await db.select().from(clients).where(eq(clients.leadId, leadId))).toHaveLength(0);
     });
 

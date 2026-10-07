@@ -75,6 +75,14 @@ describe("leads service", () => {
       expect(lead).toMatchObject({ canEdit: false, canArchive: false, canDelete: false, canAssign: false });
     });
 
+    it("cadastra só em Prospect ou Primeiro Contato", async () => {
+      const { id } = await createLeadAs(team.sales, { status: "first_contact" });
+      expect((await service.getLead(team.sales, { leadId: id })).status).toBe("first_contact");
+      for (const status of ["meeting_scheduled", "meeting_cancelled", "meeting_done", "converted", "not_converted"]) {
+        await expect(createLeadAs(team.sales, { status })).rejects.toThrow(ZodError);
+      }
+    });
+
     it("recusa e-mail duplicado sem diferenciar maiúsculas", async () => {
       await createLeadAs(team.sales, { email: "dup@x.com" });
       await expect(createLeadAs(team.manager, { email: "DUP@x.com" })).rejects.toThrow(ConflictError);
@@ -171,7 +179,6 @@ describe("leads service", () => {
         name: "Nome Novo",
         email: "novo@x.com",
         phone: "(21) 3123-4567",
-        status: "first_contact",
       });
       await service.moveLead(team.sales, { leadId: id, status: "meeting_scheduled" });
 
@@ -184,7 +191,7 @@ describe("leads service", () => {
       const { id } = await createLeadAs(team.sales2);
       const attempts = [
         service.moveLead(team.sales, { leadId: id, status: "converted" }),
-        service.updateLead(team.sales, { leadId: id, name: "X Y", email: "x@x.com", phone: "11912345678", status: "prospect" }),
+        service.updateLead(team.sales, { leadId: id, name: "X Y", email: "x@x.com", phone: "11912345678" }),
         service.setArchived(team.sales, { leadId: id, archived: true }),
         service.addNote(team.sales, { leadId: id, content: noteDoc("invasão") }),
         service.addAttachment(team.sales, { leadId: id, fileName: "a.pdf", data: PDF }),
@@ -209,7 +216,7 @@ describe("leads service", () => {
 
     it("reatribuição exige leads:assign e responsável ativo", async () => {
       const { id } = await createLeadAs(team.sales);
-      const base = { leadId: id, name: "Lead", email: "l@x.com", phone: "11912345678", status: "prospect" };
+      const base = { leadId: id, name: "Lead", email: "l@x.com", phone: "11912345678" };
 
       await expect(service.updateLead(team.sales, { ...base, ownerId: team.sales2.userId })).rejects.toThrow(ForbiddenError);
 
