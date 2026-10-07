@@ -6,13 +6,16 @@
   command = "pnpm db:migrate && pnpm build"
   publish = ".next"
 
-  # Não gasta créditos quando o commit só mexe em documentação
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude,glob)**/*.md'"
+  # Não gasta créditos quando o commit só mexe em documentação.
+  # Sem cache de build, a Netlify iguala CACHED_COMMIT_REF a COMMIT_REF e o diff sai vazio: nesse caso, sempre builda.
+  ignore = "[ \"$CACHED_COMMIT_REF\" != \"$COMMIT_REF\" ] && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude,glob)**/*.md'"
 
 [build.environment]
   NODE_VERSION = "24"
   # Não enviar telemetria do Next.js durante o build
   NEXT_TELEMETRY_DISABLED = "1"
+   # O cache do Turbopack guarda as variáveis do build; ele não é publicado.
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache/**"
 
 # Deploy previews e branch deploys rodariam migrations/funções contra o banco de PRODUÇÃO
 # e consomem créditos do plano gratuito. Desative também na UI (Build & deploy → Branches and deploy contexts).
