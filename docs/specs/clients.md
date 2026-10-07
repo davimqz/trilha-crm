@@ -5,8 +5,8 @@
 
 ## 1. Visão geral
 
-Cliente **não é cadastrado manualmente**. Todo cliente nasce de um lead: quando o lead é arrastado (ou tem o status
-alterado) para **Convertido**, o cliente é criado automaticamente e aparece na seção **Clientes**.
+Cliente **não é cadastrado manualmente**. Todo cliente nasce de um lead: quando o lead é arrastado no kanban
+para **Convertido**, o cliente é criado automaticamente e aparece na seção **Clientes**.
 
 Cliente e lead são a **mesma pessoa**: nome, e-mail, telefone, responsável, anotações e anexos são compartilhados.
 O cliente acrescenta **status associativo**, **atendimentos** e a **linha do tempo** completa.
@@ -117,7 +117,7 @@ viram clientes na migração.
 
 ## 10. Regras confirmadas na implementação
 
-- Lead **arquivado** não muda de status por nenhum caminho (kanban ou formulário), então não converte nem reverte cliente.
+- Lead **arquivado** não muda de status (o único caminho é o kanban, e ele recusa arquivados), então não converte nem reverte cliente.
 - ✅ Cliente arquivado segue os mesmos mecanismos do lead arquivado: continua editável (confirmado 2026-09-19).
 
 ## 11. Segurança

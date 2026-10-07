@@ -68,7 +68,8 @@ Busca, filtros, ordenação, aba e card aberto ficam na URL (`?q=&owner=&period=
 Assim o link pode ser compartilhado e o botão "voltar" do navegador funciona.
 
 ### 3.6 Botão "+" (cadastro manual)
-- No pé de cada coluna. Abre um diálogo **"Novo lead — <coluna>"** com:
+- Só no pé das colunas **Prospect** e **Primeiro Contato** (pedido do dono do produto em 2026-10-07). Os demais estágios
+  recebem leads apenas arrastando o card; o servidor recusa cadastro em outro estágio. Abre um diálogo **"Novo lead — <coluna>"** com:
   - **Nome** (obrigatório, 2–120 caracteres)
   - **E-mail** (obrigatório, válido, até 254 caracteres; **[Decisão]** único entre os leads, sem diferenciar maiúsculas)
   - **Telefone com DDD** (obrigatório; ver §5)
@@ -90,7 +91,9 @@ o arraste só começa depois de o ponteiro andar alguns pixels, então um clique
 Nome, e-mail, telefone, status, responsável, criado em/por, **última edição (data e hora) e por quem**, e "Arquivado" quando for o caso.
 
 ### 4.2 Editar
-- Campos: Nome, E-mail, Telefone, Status e Responsável (este último só para quem tem permissão de reatribuir).
+- Campos: Nome, E-mail, Telefone e Responsável (este último só para quem tem permissão de reatribuir).
+- **Status é só leitura** (pedido do dono do produto em 2026-10-07): mostra a coluna em que o lead está no kanban e só
+  muda arrastando o card. O servidor não aceita `status` na edição.
 - Mostra **"Última edição: 18/09/2026 às 14:32 por Ana"** e o **status** atual.
 - Botões: **Salvar**, **Arquivar** (ou **Desarquivar**) e **Excluir**, este com confirmação: *"Excluir este lead apaga também
   anotações e anexos. Esta ação não pode ser desfeita."*
@@ -151,7 +154,7 @@ A interface esconde o que o usuário não pode fazer, mas **toda regra é verifi
 | Estado | Comportamento |
 |---|---|
 | Carregando | Navegação com transição do Next; **esqueleto (skeleton) pendente** — registrado como melhoria no `tasks.md` |
-| Vazio (sem leads) | Colunas vazias com o "+"; mensagem "Nenhum lead ainda. Use + para cadastrar." |
+| Vazio (sem leads) | Colunas vazias (com "+" só em Prospect e Primeiro Contato); mensagem "Nenhum lead ainda. Use + em Prospect ou Primeiro Contato para cadastrar." |
 | Busca/filtro sem resultado | "Nenhum lead encontrado para os filtros atuais"; "Limpar filtros" fica no popover de Filtros |
 | Erro ao mover | O card volta para a coluna original e aparece um aviso de erro |
 | Sucesso | Aviso curto ("Lead cadastrado", "Anotação adicionada"…) |
@@ -163,7 +166,7 @@ o status pode ser alterado no formulário de edição, os campos têm rótulos e
 ## 8. Critérios de aceitação
 
 1. Ao clicar em **Leads**, aparece o kanban com as 7 colunas na ordem da §2, cada uma com contador.
-2. O "+" de uma coluna abre o cadastro com Nome, E-mail e Telefone obrigatórios; ao cadastrar, o card aparece nessa coluna.
+2. O "+" (só em Prospect e Primeiro Contato) abre o cadastro com Nome, E-mail e Telefone obrigatórios; ao cadastrar, o card aparece nessa coluna.
 3. Dados inválidos (e-mail inválido, telefone sem DDD válido, nome curto, e-mail duplicado) mostram erro no campo e nada é salvo.
 4. Arrastar um card para outra coluna altera o status, e o novo status persiste ao recarregar a página.
 5. A busca por parte do nome filtra os cards (sem diferenciar maiúsculas); filtros e ordenação funcionam e ficam na URL.
