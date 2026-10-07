@@ -382,6 +382,7 @@ pública, backup e um guia de deploy que o dono do produto consiga seguir. Detal
 | ~~FEATURE~~ | ~~"+" só em Prospect e Primeiro Contato; status do lead só leitura em "Editar" (vem da coluna do kanban)~~ — validado também no servidor — `feature/lead-status-rules` | Pedido do dono do produto (2026-10-07) |
 | ~~SECURITY~~ | ~~Limite de tentativas de login por conta + IP confiável conforme hospedagem~~ — feito na Entrega 05 | Entrega 02 |
 | ~~SECURITY~~ | ~~Auditoria (2026-10-07): RCE crítica em `next/og` (next 16.3.5), `sharp` e `source-map-js`~~ — next 16.3.6, transitivas atualizadas e `shadcn` (CLI + CSS de build) movido para devDependencies — `security/bump-next-16.3.6` | CI do PR #11 |
+| ~~BUG~~ | ~~Deploys parados desde 2026-09-19: scanner de segredos achou `BETTER_AUTH_SECRET` no cache do Turbopack e, sem cache, a regra `ignore` cancelava todo build~~ — `fix/netlify-deploy` | Entrega 05 |
 | IMPROVEMENT | Anexos maiores que 4 MB (upload direto para armazenamento de objetos ou plano pago) | Entrega 05 |
 | IMPROVEMENT | Monitoramento de erros com alerta (ex.: Sentry grátis) — hoje só logs da Netlify | Entrega 05 |
 | FEATURE | Recuperação de senha por e-mail | Entrega 02 (depende da integração de e-mail) |
