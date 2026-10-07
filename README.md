@@ -14,7 +14,7 @@ CRM interno da Trilha Finance. Monólito modular em Next.js + TypeScript + Postg
 ```bash
 pnpm install
 cp .env.example .env   # preencha BETTER_AUTH_SECRET (comando no arquivo)
-pnpm db:up          # sobe o Postgres em 127.0.0.1:5432
+pnpm db:up          # sobe o Postgres em 127.0.0.1:5433
 pnpm db:migrate     # cria as tabelas
 pnpm dev            # http://localhost:3000
 ```
