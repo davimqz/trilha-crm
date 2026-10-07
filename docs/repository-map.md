@@ -8,7 +8,7 @@ Guia rápido para humanos e agentes de IA. Atualize ao adicionar módulos ou mud
 ├── .github/workflows/ci.yml     CI: lint, typecheck, unit, integração (Postgres), build, E2E, audit
 ├── .github/workflows/backup.yml Backup diário criptografado do banco de produção + alerta de armazenamento
 ├── docker/postgres/init/        SQL executado na 1ª subida do Postgres (cria banco de teste)
-├── docker-compose.yml           Postgres local (127.0.0.1:5432)
+├── docker-compose.yml           Postgres local (127.0.0.1:5433)
 ├── docs/                        architecture, decisions (ADRs), security, deployment, specs, este mapa
 ├── drizzle/                     Migrations SQL (0000_auth … 0005_login_attempts)
 ├── e2e/                         Testes Playwright (setup global faz seed e login por papel)
