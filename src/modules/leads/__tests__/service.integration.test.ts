@@ -187,6 +187,28 @@ describe("leads service", () => {
       expect(after.updatedAt.getTime()).toBeGreaterThan(before.updatedAt.getTime());
     });
 
+    it("data de nascimento: opcional no cadastro, gravada e limpa na edição, um evento por campo alterado", async () => {
+      const { id } = await service.createLead(team.sales, {
+        name: "Nasc Teste",
+        email: "nasc@x.com",
+        phone: "11912345678",
+        birthDate: "1990-05-20",
+        status: "prospect",
+      });
+      expect((await service.getLead(team.sales, { leadId: id })).birthDate).toBe("1990-05-20");
+
+      const contact = { leadId: id, name: "Nasc Teste", email: "nasc@x.com", phone: "11912345678" };
+      // Só o telefone muda: um único evento phone_updated
+      await service.updateLead(team.sales, { ...contact, phone: "11987654321", birthDate: "1990-05-20" });
+      // Campo vazio limpa a data
+      await service.updateLead(team.sales, { ...contact, phone: "11987654321", birthDate: "" });
+
+      expect((await service.getLead(team.sales, { leadId: id })).birthDate).toBeNull();
+      const types = (await service.listEvents(team.viewer, { leadId: id })).map((event) => event.type);
+      expect(types.filter((type) => type.endsWith("_updated"))).toEqual(["birth_date_updated", "phone_updated"]);
+      await expect(service.updateLead(team.sales, { ...contact, birthDate: "2999-01-01" })).rejects.toThrow(ZodError);
+    });
+
     it("sales NÃO altera lead de outro responsável (IDOR)", async () => {
       const { id } = await createLeadAs(team.sales2);
       const attempts = [

@@ -10,12 +10,13 @@ const PNG = Buffer.from(
 );
 const DOCX = Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.from("....word/document.xml....")]);
 
-async function createLead(page: Page, column: string, lead: { name: string; email: string; phone: string }) {
+async function createLead(page: Page, column: string, lead: { name: string; email: string; phone: string; birthDate?: string }) {
   await page.getByRole("button", { name: `Adicionar lead em ${column}` }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Nome", { exact: true }).fill(lead.name);
   await dialog.getByLabel("E-mail").fill(lead.email);
   await dialog.getByLabel("Telefone com DDD").fill(lead.phone);
+  if (lead.birthDate) await dialog.getByLabel("Data de nascimento (opcional)").fill(lead.birthDate);
   await dialog.getByRole("button", { name: "Cadastrar" }).click();
   await expect(page.getByTestId(`lead-card-${lead.email}`)).toBeVisible();
   // Espera o diálogo terminar de fechar: durante a animação o overlay ainda captura o ponteiro
@@ -262,6 +263,25 @@ test.describe("leads (admin)", () => {
     await expect(page.getByTestId("lead-dialog")).toBeVisible();
   });
 
+  test("data de nascimento no cadastro e na edição, com evento conciso na linha do tempo", async ({ page }) => {
+    await page.goto("/leads");
+    await createLead(page, "Prospect", { name: "Olga Nascimento", email: "nascimento@e2e.test", phone: "11955550000", birthDate: "1992-07-15" });
+    await openLead(page, "Olga Nascimento");
+    await expect(page.getByTestId("lead-dialog")).toContainText("15/07/1992");
+
+    await page.getByRole("tab", { name: "Editar" }).click();
+    await page.getByLabel("Data de nascimento (opcional)").fill("1992-07-16");
+    await page.getByRole("button", { name: "Salvar" }).click();
+    await expect(page.getByText("Alterações salvas.")).toBeVisible();
+
+    await page.getByRole("tab", { name: "Linha do tempo" }).click();
+    const timeline = page.getByTestId("timeline");
+    await expect(timeline).toContainText("Atualização de data de nascimento");
+    await expect(timeline).toContainText("Lead criado");
+    // O valor da data não aparece no histórico
+    await expect(timeline).not.toContainText("16/07/1992");
+  });
+
   test("editar e excluir anotação, com registro na linha do tempo", async ({ page }) => {
     await page.goto("/leads");
     await createLead(page, "Prospect", { name: "Quênia Notas", email: "quenia@e2e.test", phone: "11944440000" });
@@ -289,7 +309,8 @@ test.describe("leads (admin)", () => {
     await page.getByRole("tab", { name: "Linha do tempo" }).click();
     await expect(page.getByTestId("timeline")).toContainText("Anotação editada");
     await expect(page.getByTestId("timeline")).toContainText("Anotação excluída");
-    await expect(page.getByTestId("timeline")).toContainText("Texto corrigido");
+    // Resumo conciso: o texto da anotação não aparece na linha do tempo
+    await expect(page.getByTestId("timeline")).not.toContainText("Texto corrigido");
   });
 
   test("XSS: HTML digitado na anotação é exibido como texto", async ({ page }) => {

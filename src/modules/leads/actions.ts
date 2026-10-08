@@ -29,11 +29,12 @@ export async function createLeadAction(_previous: ActionResult, formData: FormDa
       name: formString(formData, "name"),
       email: formString(formData, "email"),
       phone: formString(formData, "phone"),
+      birthDate: formString(formData, "birthDate"),
       status: formString(formData, "status"),
     });
     return "Lead cadastrado.";
   });
-  return withSubmittedValues(result, formData, ["name", "email", "phone"]);
+  return withSubmittedValues(result, formData, ["name", "email", "phone", "birthDate"]);
 }
 
 export async function updateLeadAction(_previous: ActionResult, formData: FormData): Promise<ActionResult> {
@@ -45,11 +46,12 @@ export async function updateLeadAction(_previous: ActionResult, formData: FormDa
       name: formString(formData, "name"),
       email: formString(formData, "email"),
       phone: formString(formData, "phone"),
+      birthDate: formString(formData, "birthDate"),
       ...(ownerId ? { ownerId } : {}),
     });
     return "Alterações salvas.";
   });
-  return withSubmittedValues(result, formData, ["name", "email", "phone", "ownerId"]);
+  return withSubmittedValues(result, formData, ["name", "email", "phone", "birthDate", "ownerId"]);
 }
 
 export async function moveLeadAction(leadId: unknown, status: unknown): Promise<ActionResult> {

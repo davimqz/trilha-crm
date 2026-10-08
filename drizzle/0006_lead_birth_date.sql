@@ -1,0 +1,3 @@
+ALTER TABLE "lead_events" DROP CONSTRAINT "lead_events_type_check";--> statement-breakpoint
+ALTER TABLE "leads" ADD COLUMN "birth_date" date;--> statement-breakpoint
+ALTER TABLE "lead_events" ADD CONSTRAINT "lead_events_type_check" CHECK ("lead_events"."type" in ('created', 'status_changed', 'converted', 'conversion_reverted', 'client_reactivated', 'archived', 'unarchived', 'owner_changed', 'contact_updated', 'name_updated', 'email_updated', 'phone_updated', 'birth_date_updated', 'associative_status_changed', 'note_edited', 'note_deleted', 'service_record_edited', 'service_record_deleted'));

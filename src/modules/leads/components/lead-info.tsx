@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { formatDateTime } from "@/lib/format";
+import { formatCivilDate, formatDateTime } from "@/lib/format";
 
 import { LEAD_STATUS_LABELS } from "../constants";
 import { formatPhone } from "../phone";
@@ -31,6 +31,7 @@ export function LeadInfo({ lead }: { lead: LeadDetail }) {
           {formatPhone(lead.phone)}
         </a>
       </Field>
+      <Field label="Data de nascimento">{lead.birthDate ? formatCivilDate(lead.birthDate) : "—"}</Field>
       <Field label="Responsável">{lead.ownerName}</Field>
       <Field label="Criado em">
         {formatDateTime(lead.createdAt)} por {lead.createdByName}

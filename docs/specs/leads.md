@@ -73,6 +73,7 @@ Assim o link pode ser compartilhado e o botão "voltar" do navegador funciona.
   - **Nome** (obrigatório, 2–120 caracteres)
   - **E-mail** (obrigatório, válido, até 254 caracteres; **[Decisão]** único entre os leads, sem diferenciar maiúsculas)
   - **Telefone com DDD** (obrigatório; ver §5)
+  - **Data de nascimento** (opcional; pedido do dono do produto em 2026-10-07)
   - Botão **Cadastrar**
 - O lead nasce no estágio da coluna, com o usuário que cadastrou como **responsável**.
 
@@ -88,10 +89,10 @@ o arraste só começa depois de o ponteiro andar alguns pixels, então um clique
 (nome, status, responsável) e **abas** cujo conteúdo rola dentro do modal:
 
 ### 4.1 Informações
-Nome, e-mail, telefone, status, responsável, criado em/por, **última edição (data e hora) e por quem**, e "Arquivado" quando for o caso.
+Nome, e-mail, telefone, data de nascimento (ou "—"), status, responsável, criado em/por, **última edição (data e hora) e por quem**, e "Arquivado" quando for o caso.
 
 ### 4.2 Editar
-- Campos: Nome, E-mail, Telefone e Responsável (este último só para quem tem permissão de reatribuir).
+- Campos: Nome, E-mail, Telefone, Data de nascimento (opcional; vazio apaga) e Responsável (este último só para quem tem permissão de reatribuir).
 - **Status é só leitura** (pedido do dono do produto em 2026-10-07): mostra a coluna em que o lead está no kanban e só
   muda arrastando o card. O servidor não aceita `status` na edição.
 - Mostra **"Última edição: 18/09/2026 às 14:32 por Ana"** e o **status** atual.
@@ -132,6 +133,7 @@ Nome, e-mail, telefone, status, responsável, criado em/por, **última edição 
 | Nome | Espaços extras removidos; 2–120 caracteres |
 | E-mail | Espaços removidos, convertido para minúsculas, formato válido, até 254 caracteres, único |
 | Telefone | Só dígitos são guardados: DDD válido (11–99, lista da Anatel) + 8 dígitos (fixo) ou 9 dígitos começando com 9 (celular). Aceita a entrada com ou sem `+55`, parênteses, espaços e hífen. É exibido como `(11) 91234-5678` |
+| Data de nascimento | Opcional. Data civil `AAAA-MM-DD` (sem fuso), real (recusa 30/02), entre 01/01/1900 e hoje (fuso de São Paulo). Exibida como `dd/mm/aaaa` |
 | Status | Um dos 7 ids da §2 |
 | Responsável | Usuário ativo |
 | Datas | Guardadas em UTC e exibidas em `America/Sao_Paulo`, formato brasileiro |

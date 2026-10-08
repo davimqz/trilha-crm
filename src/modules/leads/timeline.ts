@@ -1,66 +1,68 @@
 // Linha do tempo (ADR-008): função pura que junta eventos do lead, anotações, anexos e itens extras
 // (ex.: atendimentos do cliente) em ordem cronológica. Sem dependências de servidor.
+// Itens são concisos de propósito: só um rótulo curto ou "De X Para Y" (pedido do dono do produto).
 
 import { LEAD_STATUS_LABELS, type LeadEventType, type LeadStatus } from "./constants";
-import { plainText, type RichTextDoc } from "./rich-text";
 
 export type TimelineKind = "event" | "note" | "attachment" | "service";
+
+export type TimelineChange = { from: string; to: string };
 
 export type TimelineItem = {
   id: string;
   at: Date;
   kind: TimelineKind;
-  title: string;
-  description?: string;
-  actor: string;
+  // Rótulo curto; com `change`, vira o prefixo (ex.: "Responsável") e pode faltar (mudança de status do lead)
+  title?: string;
+  change?: TimelineChange;
 };
 
-type EventLike = { id: string; type: LeadEventType; fromValue: string | null; toValue: string | null; actorName: string; createdAt: Date };
-type NoteLike = { id: string; content: RichTextDoc; authorName: string; createdAt: Date };
-type AttachmentLike = { id: string; fileName: string; uploadedByName: string; createdAt: Date };
+type EventLike = { id: string; type: LeadEventType; fromValue: string | null; toValue: string | null; createdAt: Date };
+type NoteLike = { id: string; createdAt: Date };
+type AttachmentLike = { id: string; createdAt: Date };
+
+type EventSummary = Pick<TimelineItem, "title" | "change">;
 
 const EXCERPT_MAX = 160;
+
+const EVENT_TITLES: Partial<Record<LeadEventType, string>> = {
+  created: "Lead criado",
+  converted: "Convertido em cliente",
+  conversion_reverted: "Conversão desfeita",
+  client_reactivated: "Cliente reativado",
+  archived: "Lead arquivado",
+  unarchived: "Lead desarquivado",
+  // Evento antigo (antes de separar por campo): continua aparecendo no histórico
+  contact_updated: "Atualização de contato",
+  name_updated: "Atualização de nome",
+  email_updated: "Atualização de e-mail",
+  phone_updated: "Atualização de telefone",
+  birth_date_updated: "Atualização de data de nascimento",
+  note_edited: "Anotação editada",
+  note_deleted: "Anotação excluída",
+  service_record_edited: "Atendimento editado",
+  service_record_deleted: "Atendimento excluído",
+};
 
 function statusLabel(value: string | null): string {
   if (!value) return "—";
   return LEAD_STATUS_LABELS[value as LeadStatus] ?? value;
 }
 
-export function eventTitle(event: Pick<EventLike, "type" | "fromValue" | "toValue">): string {
+export function describeEvent(event: Pick<EventLike, "type" | "fromValue" | "toValue">): EventSummary {
   switch (event.type) {
-    case "created":
-      return event.toValue ? `Virou lead em ${statusLabel(event.toValue)}` : "Virou lead";
     case "status_changed":
-      return `Movido de ${statusLabel(event.fromValue)} para ${statusLabel(event.toValue)}`;
-    case "converted":
-      return "Convertido em cliente";
-    case "conversion_reverted":
-      return "Conversão desfeita — cliente arquivado";
-    case "client_reactivated":
-      return "Cliente reativado";
-    case "archived":
-      return "Lead arquivado";
-    case "unarchived":
-      return "Lead desarquivado";
+      return { change: { from: statusLabel(event.fromValue), to: statusLabel(event.toValue) } };
     case "owner_changed":
-      return `Responsável alterado de ${event.fromValue ?? "—"} para ${event.toValue ?? "—"}`;
-    case "contact_updated":
-      return "Dados de contato atualizados";
+      return { title: "Responsável", change: { from: event.fromValue ?? "—", to: event.toValue ?? "—" } };
     case "associative_status_changed":
-      return `Status associativo: ${event.fromValue ?? "—"} → ${event.toValue ?? "—"}`;
-    case "note_edited":
-      return "Anotação editada";
-    case "note_deleted":
-      return "Anotação excluída";
-    case "service_record_edited":
-      return `Atendimento editado: ${event.toValue ?? "—"}`;
-    case "service_record_deleted":
-      return `Atendimento excluído: ${event.fromValue ?? "—"}`;
+      return { title: "Status associativo", change: { from: event.fromValue ?? "—", to: event.toValue ?? "—" } };
     default:
-      return "Evento";
+      return { title: EVENT_TITLES[event.type] ?? "Evento" };
   }
 }
 
+// Usado ao gravar o trecho de uma anotação excluída no evento
 export function excerpt(text: string): string {
   const compact = text.replace(/\s+/g, " ").trim();
   return compact.length > EXCERPT_MAX ? `${compact.slice(0, EXCERPT_MAX - 1)}…` : compact;
@@ -77,25 +79,19 @@ export function buildTimeline(sources: {
       id: `event-${event.id}`,
       at: new Date(event.createdAt),
       kind: "event" as const,
-      title: eventTitle(event),
-      // Anotação excluída: mostra o trecho do texto apagado
-      description: event.type === "note_deleted" && event.fromValue ? event.fromValue : undefined,
-      actor: event.actorName,
+      ...describeEvent(event),
     })),
     ...(sources.notes ?? []).map((note) => ({
       id: `note-${note.id}`,
       at: new Date(note.createdAt),
       kind: "note" as const,
       title: "Anotação adicionada",
-      description: excerpt(plainText(note.content)),
-      actor: note.authorName,
     })),
     ...(sources.attachments ?? []).map((attachment) => ({
       id: `attachment-${attachment.id}`,
       at: new Date(attachment.createdAt),
       kind: "attachment" as const,
-      title: `Anexo adicionado: ${attachment.fileName}`,
-      actor: attachment.uploadedByName,
+      title: "Anexo adicionado",
     })),
     ...(sources.extra ?? []),
   ];

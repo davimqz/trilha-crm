@@ -52,6 +52,8 @@ export const LEAD_PERIOD_LABELS: Record<LeadPeriod, string> = {
 };
 
 export const LEAD_NAME_MAX = 120;
+// Data de nascimento (opcional): entre esta data e hoje
+export const BIRTH_DATE_MIN = "1900-01-01";
 export const LEAD_SEARCH_MAX = 100;
 
 export const NOTE_TEXT_MAX = 10_000;
@@ -86,7 +88,12 @@ export const LEAD_EVENT_TYPES = [
   "archived",
   "unarchived",
   "owner_changed",
+  // Legado: substituído pelos eventos por campo abaixo; mantido para o histórico antigo
   "contact_updated",
+  "name_updated",
+  "email_updated",
+  "phone_updated",
+  "birth_date_updated",
   "associative_status_changed",
   "note_edited",
   "note_deleted",

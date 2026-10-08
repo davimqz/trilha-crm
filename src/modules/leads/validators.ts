@@ -1,6 +1,9 @@
 import { z } from "zod";
 
+import { todayCivilDate } from "@/lib/format";
+
 import {
+  BIRTH_DATE_MIN,
   LEAD_CREATE_STATUSES,
   LEAD_NAME_MAX,
   LEAD_PERIODS,
@@ -35,16 +38,45 @@ export const leadPhoneSchema = z.string().transform((value, context) => {
   return normalized;
 });
 
+function isRealCivilDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  // Rejeita datas que o Date "corrige" (ex.: 2026-02-30 → 02/03)
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+// Opcional: vazio/ausente vira null. Formato do <input type="date">: "AAAA-MM-DD"
+export const leadBirthDateSchema = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value, context) => {
+    if (!value) return null;
+    if (!isRealCivilDate(value)) {
+      context.addIssue({ code: "custom", message: "Data de nascimento inválida." });
+      return z.NEVER;
+    }
+    // Strings "AAAA-MM-DD" comparam na ordem cronológica
+    if (value < BIRTH_DATE_MIN || value > todayCivilDate()) {
+      context.addIssue({ code: "custom", message: "Data de nascimento fora do intervalo permitido." });
+      return z.NEVER;
+    }
+    return value;
+  });
+
 const status = z.enum(LEAD_STATUSES, "Status inválido.");
 const name = leadNameSchema;
 const email = leadEmailSchema;
 const phone = leadPhoneSchema;
+const birthDate = leadBirthDateSchema;
 
 // strictObject: ownerId, archivedAt, createdBy etc. nunca vêm do cliente
 export const createLeadSchema = z.strictObject({
   name,
   email,
   phone,
+  birthDate,
   status: z.enum(LEAD_CREATE_STATUSES, "Leads só podem ser cadastrados em Prospect ou Primeiro Contato."),
 });
 
@@ -54,6 +86,7 @@ export const updateLeadSchema = z.strictObject({
   name,
   email,
   phone,
+  birthDate,
   // Só aplicado se o ator tiver `leads:assign` (checado no service)
   ownerId: z.uuid("Responsável inválido.").optional(),
 });

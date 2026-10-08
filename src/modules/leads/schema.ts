@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, customType, index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { check, customType, date, index, integer, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // Imports relativos: o drizzle-kit não resolve o alias "@/"
 import { users } from "../../core/auth/schema";
@@ -21,6 +21,8 @@ export const leads = pgTable(
     email: text("email").notNull().unique(),
     // Só dígitos: DDD + número
     phone: text("phone").notNull(),
+    // Opcional; "AAAA-MM-DD" sem fuso (data civil, não instante)
+    birthDate: date("birth_date", { mode: "string" }),
     status: text("status").notNull().default("prospect"),
     ownerId: uuid("owner_id")
       .notNull()

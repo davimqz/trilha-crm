@@ -85,11 +85,13 @@ test.describe("clientes (admin)", () => {
     // Linha do tempo com o histórico completo
     await page.getByRole("tab", { name: "Linha do tempo" }).click();
     const timeline = page.getByTestId("timeline");
-    await expect(timeline).toContainText("Virou lead em Prospect");
-    await expect(timeline).toContainText("Movido de Prospect para Convertido");
+    await expect(timeline).toContainText("Lead criado");
+    await expect(timeline).toContainText("De Prospect Para Convertido");
     await expect(timeline).toContainText("Convertido em cliente");
-    await expect(timeline).toContainText("Status associativo: Adimplente → Inadimplente");
-    await expect(timeline).toContainText("Atendimento (Ligação): Cobrança da mensalidade");
+    await expect(timeline).toContainText("Status associativo: De Adimplente Para Inadimplente");
+    await expect(timeline).toContainText("Atendimento registrado");
+    // Resumo conciso: sem assunto do atendimento nem nome de quem fez
+    await expect(timeline).not.toContainText("Cobrança da mensalidade");
     await expect(timeline.getByTestId("timeline-item").first()).toContainText(/\d{2}\/\d{2}\/\d{4} às \d{2}:\d{2}/);
 
     // Editar e excluir o atendimento
@@ -105,8 +107,8 @@ test.describe("clientes (admin)", () => {
     await page.getByRole("alertdialog").getByRole("button", { name: "Excluir" }).click();
     await expect(page.getByTestId("service-record")).toHaveCount(0);
     await page.getByRole("tab", { name: "Linha do tempo" }).click();
-    await expect(page.getByTestId("timeline")).toContainText("Atendimento editado: Cobrança renegociada");
-    await expect(page.getByTestId("timeline")).toContainText("Atendimento excluído: Ligação — Cobrança renegociada");
+    await expect(page.getByTestId("timeline")).toContainText("Atendimento editado");
+    await expect(page.getByTestId("timeline")).toContainText("Atendimento excluído");
 
     await page.getByTestId("client-dialog").getByRole("button", { name: "Fechar" }).click();
     expect(await activeCount(page)).toBe(before);
@@ -134,7 +136,7 @@ test.describe("clientes (admin)", () => {
     await page.getByRole("link", { name: "Arquivados" }).click();
     await openClient(page, "rafael@e2e.test");
     await page.getByRole("tab", { name: "Linha do tempo" }).click();
-    await expect(page.getByTestId("timeline")).toContainText("Conversão desfeita — cliente arquivado");
+    await expect(page.getByTestId("timeline")).toContainText("Conversão desfeita");
     await page.getByRole("tab", { name: /Atendimentos/ }).click();
     await expect(page.getByTestId("service-record-form")).toHaveCount(0);
   });
